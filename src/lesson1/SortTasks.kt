@@ -2,6 +2,10 @@
 
 package lesson1
 
+import java.io.File
+import kotlin.math.min
+import kotlin.String
+
 /**
  * Сортировка времён
  *
@@ -33,7 +37,59 @@ package lesson1
  * В случае обнаружения неверного формата файла бросить любое исключение.
  */
 fun sortTimes(inputName: String, outputName: String) {
-    TODO()
+    fun compare(first: String, second: String): Boolean {
+        val firstValue = first.split(Regex(":| "))
+        val secondValue = second.split(Regex(":| "))
+
+        val comparison = { first: List<String>, second: List<String> ->
+            when {
+                (first[3] == "PM" && second[3] == "AM") || (first[0] == "12" && first[3] == "PM" && second[3] == "AM") -> 1
+                (first[0] == "12" && second[0] != "12") && ((first[3] == "AM") || (first[3] == "PM")) -> -1
+                else -> 0
+            }
+        }
+
+        var sign = comparison(firstValue, secondValue)
+        if (sign > 0) return true else if (sign < 0) return false
+
+        sign = -comparison(secondValue, firstValue)
+        if (sign > 0) return true else if (sign < 0) return false
+
+        for ((first, second) in listOf(
+            firstValue[0].toInt() to secondValue[0].toInt(),
+            firstValue[1].toInt() to secondValue[1].toInt(),
+            firstValue[2].toInt() to secondValue[2].toInt()
+        )) {
+            if (first > second) return true
+            else if (first < second) return false
+        }
+        return true
+    }
+
+    File(outputName).bufferedWriter().use { writer ->
+        run {
+            val list = mutableListOf<String>()
+            File(inputName).forEachLine { line ->
+                run {
+                    require(line.matches(Regex("(0|1)\\d:[0-5]\\d:[0-5]\\d (P|A)M")))
+                    if (list.isEmpty()) {
+                        list.add(line)
+                        return@run
+                    }
+                    if (compare(line, list.last()))
+                        list.add(line)
+                    else {
+                        val index = list.indexOfLast { compare(line, it) } + 1
+                        list.add(if (index > list.lastIndex) list.lastIndex else index, line)
+                    }
+                }
+            }
+            list.forEach {
+                writer.write(it)
+                writer.newLine()
+            }
+        }
+    }
 }
 
 /**
@@ -63,7 +119,89 @@ fun sortTimes(inputName: String, outputName: String) {
  * В случае обнаружения неверного формата файла бросить любое исключение.
  */
 fun sortAddresses(inputName: String, outputName: String) {
-    TODO()
+    fun comparison(current: String, other: String): Int {
+        val curLength = current.length
+        val otherLength = other.length
+        for (i in 0 until min(curLength, otherLength)) {
+            val result = current[i].toLowerCase() - other[i].toLowerCase()
+            if (result != 0) return result
+        }
+        if (curLength != otherLength) return curLength - otherLength
+        return 0
+    }
+
+    fun comparison(current: Int, other: Int): Int = current - other
+
+    fun <T> addIfEmpty(list: MutableList<T>, element: T): Boolean {
+        if (list.isEmpty()) return list.add(element)
+        return false
+    }
+
+
+    fun MutableList<Pair<String, String>>.addWithSort(element: Pair<String, String>) {
+        if (addIfEmpty(this, element)) return
+        for (i in lastIndex downTo 0) {
+            val comparison = comparison(element.first, get(i).first)
+            if (comparison > 0 || (comparison == 0 && comparison(element.second, get(i).second) > 0)) {
+                add(i + 1, element)
+                return
+            }
+            if (i == 0) add(0, element)
+        }
+    }
+
+    fun MutableList<Pair<Pair<String, Int>, MutableList<Pair<String, String>>>>.addWithSort(
+        element: Pair<Pair<String, Int>, MutableList<Pair<String, String>>>
+    ) {
+        if (addIfEmpty(this, element)) return
+        for (i in lastIndex downTo 0) {
+            val comparison = comparison(element.first.first, get(i).first.first)
+            if (comparison > 0 || (comparison == 0 && comparison(element.first.second, get(i).first.second) > 0)) {
+                add(i + 1, element)
+                return
+            }
+            if (i == 0) add(0, element)
+        }
+    }
+
+    File(outputName).bufferedWriter().use { writer ->
+        run {
+            val list = mutableListOf<Pair<Pair<String, Int>, MutableList<Pair<String, String>>>>()
+            File(inputName).forEachLine { line ->
+                run {
+                    require(line.matches(Regex("[a-zA-Zа-яА-Я-ёЁ]+ [a-zA-Zа-яА-Я-ёЁ]+ - [a-zA-Zа-яА-Я-ёЁ]+ \\d+")))
+                    val nameDashAddress = line.split(Regex(" - | "))
+
+                    if (list.isEmpty()) {
+                        list.add((nameDashAddress[2] to nameDashAddress[3].toInt()) to mutableListOf(nameDashAddress[0] to nameDashAddress[1]))
+                        return@run
+                    }
+                    for (i in 0..list.lastIndex) {
+                        if (list[i].first.first == nameDashAddress[2] && list[i].first.second == nameDashAddress[3].toInt()) {
+                            list[i].second.addWithSort(nameDashAddress[0] to nameDashAddress[1])
+                            break
+                        }
+                        if (i == list.lastIndex)
+                            list.addWithSort(
+                                (nameDashAddress[2] to nameDashAddress[3].toInt()) to mutableListOf(nameDashAddress[0] to nameDashAddress[1])
+                            )
+                    }
+                }
+            }
+            list.forEachIndexed() { index, it ->
+                run {
+                    writer.write(
+                        "${it.first.first} ${it.first.second} - " +
+                                (it.second.foldIndexed("") { i, acc, pair ->
+                                    acc + "${pair.first} ${pair.second}" +
+                                            if (i != list[index].second.lastIndex) ", " else ""
+                                })
+                    )
+                    writer.newLine()
+                }
+            }
+        }
+    }
 }
 
 /**

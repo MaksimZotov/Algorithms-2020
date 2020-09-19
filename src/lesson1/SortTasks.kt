@@ -132,13 +132,7 @@ fun sortAddresses(inputName: String, outputName: String) {
 
     fun comparison(current: Int, other: Int): Int = current - other
 
-    fun <T> addIfEmpty(list: MutableList<T>, element: T): Boolean {
-        if (list.isEmpty()) return list.add(element)
-        return false
-    }
-
     fun MutableList<Pair<String, String>>.addWithSort(element: Pair<String, String>) {
-        if (addIfEmpty(this, element)) return
         for (i in lastIndex downTo 0) {
             val comparison = comparison(element.first, get(i).first)
             if (comparison > 0 || (comparison == 0 && comparison(element.second, get(i).second) > 0)) {
@@ -152,7 +146,6 @@ fun sortAddresses(inputName: String, outputName: String) {
     fun MutableList<Pair<Pair<String, Int>, MutableList<Pair<String, String>>>>.addWithSort(
         element: Pair<Pair<String, Int>, MutableList<Pair<String, String>>>
     ) {
-        if (addIfEmpty(this, element)) return
         for (i in lastIndex downTo 0) {
             val comparison = comparison(element.first.first, get(i).first.first)
             if (comparison > 0 || (comparison == 0 && comparison(element.first.second, get(i).first.second) > 0)) {

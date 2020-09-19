@@ -66,28 +66,28 @@ fun sortTimes(inputName: String, outputName: String) {
         return true
     }
 
-    File(outputName).bufferedWriter().use { writer ->
+    val list = mutableListOf<String>()
+
+    File(inputName).forEachLine { line ->
         run {
-            val list = mutableListOf<String>()
-            File(inputName).forEachLine { line ->
-                run {
-                    require(line.matches(Regex("(0|1)\\d:[0-5]\\d:[0-5]\\d (P|A)M")))
-                    if (list.isEmpty()) {
-                        list.add(line)
-                        return@run
-                    }
-                    if (compare(line, list.last()))
-                        list.add(line)
-                    else {
-                        val index = list.indexOfLast { compare(line, it) } + 1
-                        list.add(if (index > list.lastIndex) list.lastIndex else index, line)
-                    }
-                }
+            require(line.matches(Regex("(0|1)\\d:[0-5]\\d:[0-5]\\d (P|A)M")))
+            if (list.isEmpty()) {
+                list.add(line)
+                return@run
             }
-            list.forEach {
-                writer.write(it)
-                writer.newLine()
+            if (compare(line, list.last()))
+                list.add(line)
+            else {
+                val index = list.indexOfLast { compare(line, it) } + 1
+                list.add(if (index > list.lastIndex) list.lastIndex else index, line)
             }
+        }
+    }
+
+    File(outputName).bufferedWriter().use { writer ->
+        list.forEach {
+            writer.write(it)
+            writer.newLine()
         }
     }
 }
@@ -137,7 +137,6 @@ fun sortAddresses(inputName: String, outputName: String) {
         return false
     }
 
-
     fun MutableList<Pair<String, String>>.addWithSort(element: Pair<String, String>) {
         if (addIfEmpty(this, element)) return
         for (i in lastIndex downTo 0) {
@@ -164,45 +163,43 @@ fun sortAddresses(inputName: String, outputName: String) {
         }
     }
 
-    File(outputName).bufferedWriter().use { writer ->
-        run {
-            val list = mutableListOf<Pair<Pair<String, Int>, MutableList<Pair<String, String>>>>()
-            File(inputName).forEachLine { line ->
-                run {
-                    require(line.matches(Regex("[a-zA-Zа-яА-Я-ёЁ]+ [a-zA-Zа-яА-Я-ёЁ]+ - [a-zA-Zа-яА-Я-ёЁ]+ \\d+")))
-                    val nameDashAddress = line.split(Regex(" - | "))
+    val list = mutableListOf<Pair<Pair<String, Int>, MutableList<Pair<String, String>>>>()
 
-                    if (list.isEmpty()) {
-                        list.add((nameDashAddress[2] to nameDashAddress[3].toInt()) to mutableListOf(nameDashAddress[0] to nameDashAddress[1]))
-                        return@run
-                    }
-                    for (i in 0..list.lastIndex) {
-                        if (list[i].first.first == nameDashAddress[2] && list[i].first.second == nameDashAddress[3].toInt()) {
-                            list[i].second.addWithSort(nameDashAddress[0] to nameDashAddress[1])
-                            break
-                        }
-                        if (i == list.lastIndex)
-                            list.addWithSort(
-                                (nameDashAddress[2] to nameDashAddress[3].toInt()) to mutableListOf(nameDashAddress[0] to nameDashAddress[1])
-                            )
-                    }
-                }
+    File(inputName).forEachLine { line ->
+        run {
+            require(line.matches(Regex("[a-zA-Zа-яА-Я-ёЁ]+ [a-zA-Zа-яА-Я-ёЁ]+ - [a-zA-Zа-яА-Я-ёЁ]+ \\d+")))
+            val nameDashAddress = line.split(Regex(" - | "))
+            if (list.isEmpty()) {
+                list.add((nameDashAddress[2] to nameDashAddress[3].toInt()) to mutableListOf(nameDashAddress[0] to nameDashAddress[1]))
+                return@run
             }
-            list.forEachIndexed() { index, it ->
-                run {
-                    writer.write(
-                        "${it.first.first} ${it.first.second} - " +
-                                (it.second.foldIndexed("") { i, acc, pair ->
-                                    acc + "${pair.first} ${pair.second}" +
-                                            if (i != list[index].second.lastIndex) ", " else ""
-                                })
-                    )
-                    writer.newLine()
+            for (i in 0..list.lastIndex) {
+                if (list[i].first.first == nameDashAddress[2] && list[i].first.second == nameDashAddress[3].toInt()) {
+                    list[i].second.addWithSort(nameDashAddress[0] to nameDashAddress[1])
+                    break
                 }
+                if (i == list.lastIndex)
+                    list.addWithSort((nameDashAddress[2] to nameDashAddress[3].toInt()) to mutableListOf(nameDashAddress[0] to nameDashAddress[1]))
+            }
+        }
+    }
+
+    File(outputName).bufferedWriter().use { writer ->
+        list.forEachIndexed() { index, it ->
+            run {
+                writer.write(
+                    "${it.first.first} ${it.first.second} - " +
+                            (it.second.foldIndexed("") { i, acc, pair ->
+                                acc + "${pair.first} ${pair.second}" +
+                                        if (i != list[index].second.lastIndex) ", " else ""
+                            })
+                )
+                writer.newLine()
             }
         }
     }
 }
+
 
 /**
  * Сортировка температур

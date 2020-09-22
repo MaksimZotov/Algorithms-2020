@@ -157,22 +157,18 @@ fun sortAddresses(inputName: String, outputName: String) {
 
         override fun toString(): String {
             val stringBuilder = StringBuilder("$name - ")
-            listOfNames.forEachIndexed { index, it ->
-                if (index != listOfNames.lastIndex) stringBuilder.append("${it.name}, ") else stringBuilder.append(it.name)
-            }
+            listOfNames.forEachIndexed { index, it -> if (index != listOfNames.lastIndex) stringBuilder.append("${it.name}, ") else stringBuilder.append(it.name) }
             return stringBuilder.toString()
         }
     }
 
     val resultList = mutableListOf<Address>()
     File(inputName).forEachLine { line ->
-        run {
-            require(line.matches(Regex("[a-zA-Zа-яА-Я-ёЁ]+ [a-zA-Zа-яА-Я-ёЁ]+ - [a-zA-Zа-яА-Я-ёЁ]+ \\d+")))
-            val nameAndAddress = line.split(" - ")
-            val index = resultList.indexOfFirst { it.name == nameAndAddress[1] }
-            if (index >= 0) resultList[index].listOfNames.add(Name(nameAndAddress[0]))
-            else resultList.add(Address(line.split(" - ")[1], mutableListOf(Name(nameAndAddress[0]))))
-        }
+        require(line.matches(Regex("[a-zA-Zа-яА-Я-ёЁ]+ [a-zA-Zа-яА-Я-ёЁ]+ - [a-zA-Zа-яА-Я-ёЁ]+ \\d+")))
+        val nameAndAddress = line.split(" - ")
+        val index = resultList.indexOfFirst { it.name == nameAndAddress[1] }
+        if (index >= 0) resultList[index].listOfNames.add(Name(nameAndAddress[0]))
+        else resultList.add(Address(line.split(" - ")[1], mutableListOf(Name(nameAndAddress[0]))))
     }
 
     for (item in resultList) mergeSort(item.listOfNames)
@@ -253,8 +249,32 @@ fun sortTemperatures(inputName: String, outputName: String) {
  * 2
  * 2
  */
+
+// Время - O(N*Log(N))
+// Память - O(N)
 fun sortSequence(inputName: String, outputName: String) {
-    TODO()
+    val list = mutableListOf<Number>()
+    val map = mutableMapOf<String, Int>()
+    File(inputName).forEachLine { line ->
+        require(line.matches(Regex("\\d+")))
+        map[line] = map.getOrDefault(line, 0) + 1
+        list.add(Number(line))
+    }
+    if (map.isEmpty()) return
+    val targetAmount = map.maxBy { it.value }!!.value
+    Number.targetNumber = map.filter { entry -> entry.value == targetAmount }.minBy { it.key }!!.key.toInt()
+    write(mergeSort(list), outputName)
+}
+
+class Number(val name: String) : Comparable<Number> {
+    companion object { var targetNumber = 0 }
+
+    val number = name.toInt()
+
+    override fun compareTo(other: Number): Int =
+        if (number != targetNumber && other.number == targetNumber) -1 else if (other.number != targetNumber && number == targetNumber) 1 else 0
+
+    override fun toString(): String = name
 }
 
 /**

@@ -19,12 +19,9 @@ fun <T : Comparable<T>> merge(elements: MutableList<T>, begin: Int, middle: Int,
     val right = elements.copyOfRange(middle, end)
     var li = 0
     var ri = 0
-    for (i in begin until end) {
-        if (li < left.size && (ri == right.size || left[li] <= right[ri]))
-            elements[i] = left[li++]
-        else
-            elements[i] = right[ri++]
-    }
+    for (i in begin until end)
+        if (li < left.size && (ri == right.size || left[li] <= right[ri])) elements[i] = left[li++]
+        else elements[i] = right[ri++]
 }
 
 fun <T : Comparable<T>> mergeSort(elements: MutableList<T>, begin: Int, end: Int) {
@@ -35,8 +32,9 @@ fun <T : Comparable<T>> mergeSort(elements: MutableList<T>, begin: Int, end: Int
     merge(elements, begin, middle, end)
 }
 
-fun <T : Comparable<T>> mergeSort(elements: MutableList<T>) {
+fun <T : Comparable<T>> mergeSort(elements: MutableList<T>): MutableList<T> {
     mergeSort(elements, 0, elements.size)
+    return elements
 }
 
 inline fun <T> fill(
@@ -44,13 +42,14 @@ inline fun <T> fill(
     inputName: String,
     requiredFormat: String,
     crossinline constructor: (String) -> T
-) {
+): MutableList<T> {
     File(inputName).forEachLine { line ->
         run {
             require(line.matches(Regex(requiredFormat)))
             elements.add(constructor(line))
         }
     }
+    return elements
 }
 
 fun <T> write(elements: MutableList<T>, outputName: String) {
@@ -97,19 +96,14 @@ fun <T> write(elements: MutableList<T>, outputName: String) {
 // Память - O(N)
 fun sortTimes(inputName: String, outputName: String) {
     class Time(val name: String) : Comparable<Time> {
-        private val time: List<String> = name.split(Regex(":| "))
+        val time: List<String> = name.split(Regex(":| "))
+        val value = (60 * ((time[0].toInt() % 12) * 60 + time[1].toInt()) + time[2].toInt() + (if (time[3] == "AM") 0 else 43200))
 
-        override operator fun compareTo(other: Time): Int =
-            (60 * ((time[0].toInt() % 12) * 60 + time[1].toInt()) + time[2].toInt() + (if (time[3] == "AM") 0 else 43200)) -
-                    (60 * ((other.time[0].toInt() % 12) * 60 + other.time[1].toInt()) + other.time[2].toInt() + (if (other.time[3] == "AM") 0 else 43200))
+        override operator fun compareTo(other: Time): Int = value - other.value
 
         override fun toString(): String = name
     }
-
-    val list = mutableListOf<Time>()
-    fill(list, inputName, "(0|1)\\d:[0-5]\\d:[0-5]\\d (P|A)M", ::Time)
-    mergeSort(list)
-    write(list, outputName)
+    write(mergeSort(fill(mutableListOf(), inputName, "(0|1)\\d:[0-5]\\d:[0-5]\\d (P|A)M", ::Time)), outputName)
 }
 
 /**
@@ -151,55 +145,32 @@ fun sortAddresses(inputName: String, outputName: String) {
         return 0
     }
 
-    class FirstSecondName(val name: String) : Comparable<FirstSecondName> {
-        override operator fun compareTo(other: FirstSecondName): Int = compare(name, other.name)
+    class Name(val name: String) : Comparable<Name> { override operator fun compareTo(other: Name): Int = compare(name, other.name) }
 
-        override fun equals(other: Any?): Boolean = if (other !is FirstSecondName) false else name == other.name
-    }
-
-    class Address(val name: String) : Comparable<Address> {
-        val listOfNames = mutableListOf<FirstSecondName>()
+    class Address(val name: String, val listOfNames: MutableList<Name>) : Comparable<Address> {
+        val street = name.split(" ")[0]
+        val number = name.split(" ")[1].toInt()
 
         override operator fun compareTo(other: Address): Int {
-            val thisStreetAndNumber = name.split(" ")
-            val otherStreetAndNumber = other.name.split(" ")
-            val result = compare(thisStreetAndNumber[0], otherStreetAndNumber[0])
-            return if (result == 0) thisStreetAndNumber[1].toInt() - otherStreetAndNumber[1].toInt() else result
+            val result = compare(street, other.street)
+            return if (result == 0) number - other.number else result
         }
-
-        override fun equals(other: Any?): Boolean = if (other !is Address) false else name == other.name
 
         override fun toString(): String {
             val stringBuilder = StringBuilder("$name - ")
-            listOfNames.forEachIndexed { index, it ->
-                if (index != listOfNames.lastIndex) stringBuilder.append("${it.name}, ")
-                else stringBuilder.append(it.name)
-            }
+            listOfNames.forEachIndexed { index, it -> if (index != listOfNames.lastIndex) stringBuilder.append("${it.name}, ") else stringBuilder.append(it.name) }
             return stringBuilder.toString()
         }
     }
 
-    class FirstSecondNameDashAddress(name: String) {
-        val firstSecondNameDashAddress = name.split(Regex(" - "))
-        val firstSecondName = FirstSecondName(firstSecondNameDashAddress[0])
-        val address = Address(firstSecondNameDashAddress[1])
-    }
-
-    val sourceList = mutableListOf<FirstSecondNameDashAddress>()
-    fill(
-        sourceList,
-        inputName,
-        "[a-zA-Zа-яА-Я-ёЁ]+ [a-zA-Zа-яА-Я-ёЁ]+ - [a-zA-Zа-яА-Я-ёЁ]+ \\d+",
-        ::FirstSecondNameDashAddress
-    )
-
     val resultList = mutableListOf<Address>()
-    for (item in sourceList) {
-        if (resultList.contains(item.address))
-            resultList[resultList.indexOf(item.address)].listOfNames.add(item.firstSecondName)
-        else {
-            item.address.listOfNames.add(item.firstSecondName)
-            resultList.add(item.address)
+    File(inputName).forEachLine { line ->
+        run {
+            require(line.matches(Regex("[a-zA-Zа-яА-Я-ёЁ]+ [a-zA-Zа-яА-Я-ёЁ]+ - [a-zA-Zа-яА-Я-ёЁ]+ \\d+")))
+            val nameAndAddress = line.split(" - ")
+            val index = resultList.indexOfFirst { it.name == nameAndAddress[1] }
+            if (index >= 0) resultList[index].listOfNames.add(Name(nameAndAddress[0]))
+            else resultList.add(Address(line.split(" - ")[1], mutableListOf(Name(nameAndAddress[0]))))
         }
     }
 
@@ -251,11 +222,7 @@ fun sortTemperatures(inputName: String, outputName: String) {
 
         override fun toString(): String = name
     }
-
-    val list = mutableListOf<Temperature>()
-    fill(list, inputName, "-?(([0-5]\\d\\d)|(\\d\\d)|(\\d)).\\d", ::Temperature)
-    mergeSort(list)
-    write(list, outputName)
+    write(mergeSort(fill(mutableListOf(), inputName, "-?(([0-5]\\d\\d)|(\\d\\d)|(\\d)).\\d", ::Temperature)), outputName)
 }
 
 /**
@@ -306,6 +273,10 @@ fun sortSequence(inputName: String, outputName: String) {
  * Результат: second = [1 3 4 9 9 13 15 20 23 28]
  */
 fun <T : Comparable<T>> mergeArrays(first: Array<T>, second: Array<T?>) {
-    TODO()
+    val list = mutableListOf<T>()
+    second.forEachIndexed() { i, t -> list.add(if (i < first.size) first[i] else second[i]!!) }
+    merge(list, 0, first.size, second.size)
+    for (i in second.indices) second[i] = list[i]
 }
+
 

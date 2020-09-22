@@ -3,8 +3,64 @@
 package lesson1
 
 import java.io.File
+import java.lang.StringBuilder
 import kotlin.math.min
 import kotlin.String
+
+fun <T : Comparable<T>> MutableList<T>.copyOfRange(begin: Int, end: Int): MutableList<T> {
+    val result = mutableListOf<T>()
+    for (i in begin until end)
+        result.add(get(i))
+    return result
+}
+
+fun <T : Comparable<T>> merge(elements: MutableList<T>, begin: Int, middle: Int, end: Int) {
+    val left = elements.copyOfRange(begin, middle)
+    val right = elements.copyOfRange(middle, end)
+    var li = 0
+    var ri = 0
+    for (i in begin until end) {
+        if (li < left.size && (ri == right.size || left[li] <= right[ri]))
+            elements[i] = left[li++]
+        else
+            elements[i] = right[ri++]
+    }
+}
+
+fun <T : Comparable<T>> mergeSort(elements: MutableList<T>, begin: Int, end: Int) {
+    if (end - begin <= 1) return
+    val middle = (begin + end) / 2
+    mergeSort(elements, begin, middle)
+    mergeSort(elements, middle, end)
+    merge(elements, begin, middle, end)
+}
+
+fun <T : Comparable<T>> mergeSort(elements: MutableList<T>) {
+    mergeSort(elements, 0, elements.size)
+}
+
+inline fun <T> fill(
+    elements: MutableList<T>,
+    inputName: String,
+    requiredFormat: String,
+    crossinline constructor: (String) -> T
+) {
+    File(inputName).forEachLine { line ->
+        run {
+            require(line.matches(Regex(requiredFormat)))
+            elements.add(constructor(line))
+        }
+    }
+}
+
+fun <T> write(elements: MutableList<T>, outputName: String) {
+    File(outputName).bufferedWriter().use { writer ->
+        elements.forEach {
+            writer.write(it.toString())
+            writer.newLine()
+        }
+    }
+}
 
 /**
  * Сортировка времён
@@ -37,59 +93,20 @@ import kotlin.String
  * В случае обнаружения неверного формата файла бросить любое исключение.
  */
 fun sortTimes(inputName: String, outputName: String) {
-    fun compare(first: String, second: String): Boolean {
-        val firstValue = first.split(Regex(":| "))
-        val secondValue = second.split(Regex(":| "))
+    class Time(val name: String) : Comparable<Time> {
+        private val time: List<String> = name.split(Regex(":| "))
 
-        val comparison = { first: List<String>, second: List<String> ->
-            when {
-                (first[3] == "PM" && second[3] == "AM") || (first[0] == "12" && first[3] == "PM" && second[3] == "AM") -> 1
-                (first[0] == "12" && second[0] != "12") && ((first[3] == "AM") || (first[3] == "PM")) -> -1
-                else -> 0
-            }
-        }
+        override operator fun compareTo(other: Time): Int =
+            (60 * ((time[0].toInt() % 12) * 60 + time[1].toInt()) + time[2].toInt() + (if (time[3] == "AM") 0 else 43200)) -
+                    (60 * ((other.time[0].toInt() % 12) * 60 + other.time[1].toInt()) + other.time[2].toInt() + (if (other.time[3] == "AM") 0 else 43200))
 
-        var sign = comparison(firstValue, secondValue)
-        if (sign > 0) return true else if (sign < 0) return false
-
-        sign = -comparison(secondValue, firstValue)
-        if (sign > 0) return true else if (sign < 0) return false
-
-        for ((first, second) in listOf(
-            firstValue[0].toInt() to secondValue[0].toInt(),
-            firstValue[1].toInt() to secondValue[1].toInt(),
-            firstValue[2].toInt() to secondValue[2].toInt()
-        )) {
-            if (first > second) return true
-            else if (first < second) return false
-        }
-        return true
+        override fun toString(): String = name
     }
 
-    val list = mutableListOf<String>()
-
-    File(inputName).forEachLine { line ->
-        run {
-            require(line.matches(Regex("(0|1)\\d:[0-5]\\d:[0-5]\\d (P|A)M")))
-            if (list.isEmpty()) {
-                list.add(line)
-                return@run
-            }
-            if (compare(line, list.last()))
-                list.add(line)
-            else {
-                val index = list.indexOfLast { compare(line, it) } + 1
-                list.add(if (index > list.lastIndex) list.lastIndex else index, line)
-            }
-        }
-    }
-
-    File(outputName).bufferedWriter().use { writer ->
-        list.forEach {
-            writer.write(it)
-            writer.newLine()
-        }
-    }
+    val list = mutableListOf<Time>()
+    fill(list, inputName, "(0|1)\\d:[0-5]\\d:[0-5]\\d (P|A)M", ::Time)
+    mergeSort(list)
+    write(list, outputName)
 }
 
 /**
@@ -119,78 +136,66 @@ fun sortTimes(inputName: String, outputName: String) {
  * В случае обнаружения неверного формата файла бросить любое исключение.
  */
 fun sortAddresses(inputName: String, outputName: String) {
-    fun comparison(current: String, other: String): Int {
-        val curLength = current.length
-        val otherLength = other.length
-        for (i in 0 until min(curLength, otherLength)) {
-            val result = current[i].toLowerCase() - other[i].toLowerCase()
+    fun compare(name: String, otherName: String): Int {
+        for (i in 0 until min(name.length, otherName.length)) {
+            val result = name[i].toLowerCase() - otherName[i].toLowerCase()
             if (result != 0) return result
         }
-        if (curLength != otherLength) return curLength - otherLength
+        if (name.length != otherName.length) return name.length - otherName.length
         return 0
     }
 
-    fun comparison(current: Int, other: Int): Int = current - other
+    class FirstSecondName(val name: String) : Comparable<FirstSecondName> {
+        override operator fun compareTo(other: FirstSecondName): Int = compare(name, other.name)
 
-    fun MutableList<Pair<String, String>>.addWithSort(element: Pair<String, String>) {
-        for (i in lastIndex downTo 0) {
-            val comparison = comparison(element.first, get(i).first)
-            if (comparison > 0 || (comparison == 0 && comparison(element.second, get(i).second) > 0)) {
-                add(i + 1, element)
-                return
+        override fun equals(other: Any?): Boolean = if (other !is FirstSecondName) false else name == other.name
+    }
+
+    class Address(val name: String) : Comparable<Address> {
+        val listOfNames = mutableListOf<FirstSecondName>()
+
+        override operator fun compareTo(other: Address): Int {
+            val thisStreetAndNumber = name.split(" ")
+            val otherStreetAndNumber = other.name.split(" ")
+            val result = compare(thisStreetAndNumber[0], otherStreetAndNumber[0])
+            return if (result == 0) thisStreetAndNumber[1].toInt() - otherStreetAndNumber[1].toInt() else result
+        }
+
+        override fun equals(other: Any?): Boolean = if (other !is Address) false else name == other.name
+
+        override fun toString(): String {
+            val stringBuilder = StringBuilder("$name - ")
+            listOfNames.forEachIndexed { index, it ->
+                if (index != listOfNames.lastIndex) stringBuilder.append("${it.name}, ")
+                else stringBuilder.append(it.name)
             }
-            if (i == 0) add(0, element)
+            return stringBuilder.toString()
         }
     }
 
-    fun MutableList<Pair<Pair<String, Int>, MutableList<Pair<String, String>>>>.addWithSort(
-        element: Pair<Pair<String, Int>, MutableList<Pair<String, String>>>
-    ) {
-        for (i in lastIndex downTo 0) {
-            val comparison = comparison(element.first.first, get(i).first.first)
-            if (comparison > 0 || (comparison == 0 && comparison(element.first.second, get(i).first.second) > 0)) {
-                add(i + 1, element)
-                return
-            }
-            if (i == 0) add(0, element)
+    class FirstSecondNameDashAddress(name: String) {
+        val firstSecondNameDashAddress = name.split(Regex(" - "))
+        val firstSecondName = FirstSecondName(firstSecondNameDashAddress[0])
+        val address = Address(firstSecondNameDashAddress[1])
+    }
+
+    val sourceList = mutableListOf<FirstSecondNameDashAddress>()
+    fill(sourceList, inputName, "[a-zA-Zа-яА-Я-ёЁ]+ [a-zA-Zа-яА-Я-ёЁ]+ - [a-zA-Zа-яА-Я-ёЁ]+ \\d+", ::FirstSecondNameDashAddress)
+
+    val resultList = mutableListOf<Address>()
+    for (item in sourceList) {
+        if (resultList.contains(item.address))
+            resultList[resultList.indexOf(item.address)].listOfNames.add(item.firstSecondName)
+        else {
+            item.address.listOfNames.add(item.firstSecondName)
+            resultList.add(item.address)
         }
     }
 
-    val list = mutableListOf<Pair<Pair<String, Int>, MutableList<Pair<String, String>>>>()
-
-    File(inputName).forEachLine { line ->
-        run {
-            require(line.matches(Regex("[a-zA-Zа-яА-Я-ёЁ]+ [a-zA-Zа-яА-Я-ёЁ]+ - [a-zA-Zа-яА-Я-ёЁ]+ \\d+")))
-            val nameDashAddress = line.split(Regex(" - | "))
-            if (list.isEmpty()) {
-                list.add((nameDashAddress[2] to nameDashAddress[3].toInt()) to mutableListOf(nameDashAddress[0] to nameDashAddress[1]))
-                return@run
-            }
-            for (i in 0..list.lastIndex) {
-                if (list[i].first.first == nameDashAddress[2] && list[i].first.second == nameDashAddress[3].toInt()) {
-                    list[i].second.addWithSort(nameDashAddress[0] to nameDashAddress[1])
-                    break
-                }
-                if (i == list.lastIndex)
-                    list.addWithSort((nameDashAddress[2] to nameDashAddress[3].toInt()) to mutableListOf(nameDashAddress[0] to nameDashAddress[1]))
-            }
-        }
-    }
-
-    File(outputName).bufferedWriter().use { writer ->
-        list.forEachIndexed() { index, it ->
-            run {
-                writer.write(
-                    "${it.first.first} ${it.first.second} - " +
-                            (it.second.foldIndexed("") { i, acc, pair ->
-                                acc + "${pair.first} ${pair.second}" +
-                                        if (i != list[index].second.lastIndex) ", " else ""
-                            })
-                )
-                writer.newLine()
-            }
-        }
-    }
+    mergeSort(resultList)
+    for (item in resultList)
+        mergeSort(item.listOfNames)
+    write(resultList, outputName)
 }
 
 

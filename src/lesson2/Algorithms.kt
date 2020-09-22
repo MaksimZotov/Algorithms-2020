@@ -3,6 +3,7 @@
 package lesson2
 
 import java.io.File
+import java.lang.StringBuilder
 
 /**
  * Получение наибольшей прибыли (она же -- поиск максимального подмассива)
@@ -138,7 +139,34 @@ fun josephTask(menNumber: Int, choiceInterval: Int): Int {
  * вернуть ту из них, которая встречается раньше в строке first.
  */
 fun longestCommonSubstring(first: String, second: String): String {
-    TODO()
+    val list = mutableListOf<MutableList<Int>>()
+    val result = mutableListOf<MutableList<Int>>()
+    for (i in first.indices) {
+        for (j in second.indices)
+            if (first[i] == second[j])
+                list.add(mutableListOf(j))
+        var j = 1
+        var iterator = list.iterator()
+        while (i + j < first.length) {
+            while (iterator.hasNext()) {
+                if (i + j >= first.length) break
+                val element = iterator.next()
+                if (element[0] + j > second.lastIndex) continue
+                if (first[i + j] == second[element[0] + j]) {
+                    element.add(element[0] + j)
+                    iterator = list.iterator()
+                    j++
+                } else {
+                    result.add(element)
+                    iterator.remove()
+                }
+            }
+            j++
+        }
+    }
+    if (result.isEmpty()) return ""
+    val res = result.maxBy() { it.size }!!
+    return second.substring(res.first(), res.last() + 1)
 }
 
 /**

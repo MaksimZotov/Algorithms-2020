@@ -2,6 +2,8 @@
 
 package lesson2
 
+import java.io.File
+
 /**
  * Получение наибольшей прибыли (она же -- поиск максимального подмассива)
  * Простая
@@ -27,7 +29,48 @@ package lesson2
  * В случае обнаружения неверного формата файла бросить любое исключение.
  */
 fun optimizeBuyAndSell(inputName: String): Pair<Int, Int> {
-    TODO()
+    val list = mutableListOf<Pair<Pair<Int, Int>, Pair<Int, Int>>>()
+    var count = 0
+    var i = -1
+    File(inputName).forEachLine { line ->
+        require(line.matches(Regex("\\d+")))
+        count++
+        val price = line.toInt()
+        do {
+            if (list.isEmpty() || price < list[i].first.first) {
+                list.add((price to count) to (price to count))
+                i++
+            } else if (price > list[i].second.first) {
+                list.add((price to count) to (price to count))
+                i++
+                val iterator = list.iterator()
+                var buy = 0
+                var buyCount = 0
+                var bool = false
+                while (iterator.hasNext()) {
+                    val element = iterator.next()
+                    val dif = element.second.first - element.first.first
+                    if (price - element.first.first > dif) {
+                        buy = element.first.first
+                        buyCount = element.first.second
+                        iterator.remove()
+                        i--
+                        bool = true
+                    } else if (price <= element.first.first && dif == 0) {
+                        iterator.remove()
+                        i--
+                    }
+                }
+                if (bool) {
+                    list.add((buy to buyCount) to (price to count))
+                    i++
+                }
+            }
+        } while (i != list.lastIndex)
+    }
+    require(list.isNotEmpty())
+    val result = list.maxBy { it.second.first - it.first.first }!!
+    return result.first.second to result.second.second
 }
 
 /**

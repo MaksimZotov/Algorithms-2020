@@ -92,6 +92,9 @@ fun <T> write(elements: MutableList<T>, outputName: String) {
  *
  * В случае обнаружения неверного формата файла бросить любое исключение.
  */
+
+// Время - O(N*Log(N))
+// Память - O(N)
 fun sortTimes(inputName: String, outputName: String) {
     class Time(val name: String) : Comparable<Time> {
         private val time: List<String> = name.split(Regex(":| "))
@@ -135,6 +138,9 @@ fun sortTimes(inputName: String, outputName: String) {
  *
  * В случае обнаружения неверного формата файла бросить любое исключение.
  */
+
+// Время - O(N*Log(N))
+// Память - O(N)
 fun sortAddresses(inputName: String, outputName: String) {
     fun compare(name: String, otherName: String): Int {
         for (i in 0 until min(name.length, otherName.length)) {
@@ -180,7 +186,12 @@ fun sortAddresses(inputName: String, outputName: String) {
     }
 
     val sourceList = mutableListOf<FirstSecondNameDashAddress>()
-    fill(sourceList, inputName, "[a-zA-Zа-яА-Я-ёЁ]+ [a-zA-Zа-яА-Я-ёЁ]+ - [a-zA-Zа-яА-Я-ёЁ]+ \\d+", ::FirstSecondNameDashAddress)
+    fill(
+        sourceList,
+        inputName,
+        "[a-zA-Zа-яА-Я-ёЁ]+ [a-zA-Zа-яА-Я-ёЁ]+ - [a-zA-Zа-яА-Я-ёЁ]+ \\d+",
+        ::FirstSecondNameDashAddress
+    )
 
     val resultList = mutableListOf<Address>()
     for (item in sourceList) {
@@ -229,8 +240,22 @@ fun sortAddresses(inputName: String, outputName: String) {
  * 99.5
  * 121.3
  */
+
+// Время - O(N*Log(N))
+// Память - O(N)
 fun sortTemperatures(inputName: String, outputName: String) {
-    TODO()
+    class Temperature(val name: String) : Comparable<Temperature> {
+        val value = name.replace(".", "").toInt()
+
+        override operator fun compareTo(other: Temperature): Int = value - other.value
+
+        override fun toString(): String = name
+    }
+
+    val list = mutableListOf<Temperature>()
+    fill(list, inputName, "-?(([0-5]\\d\\d)|(\\d\\d)|(\\d)).\\d", ::Temperature)
+    mergeSort(list)
+    write(list, outputName)
 }
 
 /**

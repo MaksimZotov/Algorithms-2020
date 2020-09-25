@@ -30,7 +30,7 @@ import kotlin.math.sqrt
  * В случае обнаружения неверного формата файла бросить любое исключение.
  */
 
-// Время - O(N * K)   K - переменная, меняющаяся в ходе программы и зависящая от содержимого входной последовательности
+// Время - O(N * K)   K - переменная, меняющаяся в ходе работы программы и зависящая от содержимого входной последовательности
 // Память - O(N)
 fun optimizeBuyAndSell(inputName: String): Pair<Int, Int> {
     // список <Пара<Цена покупки, Дата покупки>, <Цена продажи, Дата продажи>>
@@ -167,7 +167,7 @@ fun josephTask(menNumber: Int, choiceInterval: Int): Int {
  * вернуть ту из них, которая встречается раньше в строке first.
  */
 
-// Время - O(N^2 * K)   K - переменная, меняющаяся в ходе программы (K < N)
+// Время - O(N * (N + K))   K - переменная, меняющаяся в ходе работы программы (K < N)
 // Память - O(N)
 fun longestCommonSubstring(first: String, second: String): String {
     val list = mutableListOf<MutableList<Int>>()
@@ -213,6 +213,9 @@ fun longestCommonSubstring(first: String, second: String): String {
  * Справка: простым считается число, которое делится нацело только на 1 и на себя.
  * Единица простым числом не считается.
  */
+
+// Время - O(N^(3/2))
+// Память - O(N)
 fun calcPrimesNumber(limit: Int): Int {
     if (limit <= 1) return 0
     var count = 1

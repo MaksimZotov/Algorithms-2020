@@ -29,45 +29,73 @@ import kotlin.math.sqrt
  *
  * В случае обнаружения неверного формата файла бросить любое исключение.
  */
+
+// Время - O(N * K)   K - переменная, меняющаяся в ходе программы и зависящая от содержимого входной последовательности
+// Память - O(N)
 fun optimizeBuyAndSell(inputName: String): Pair<Int, Int> {
+    // список <Пара<Цена покупки, Дата покупки>, <Цена продажи, Дата продажи>>
     val list = mutableListOf<Pair<Pair<Int, Int>, Pair<Int, Int>>>()
-    var count = 0
+    var date = 0
+
+    // Индекс текущей пары buy-sell
     var i = -1
+
+    // O(N)
     File(inputName).forEachLine { line ->
         require(line.matches(Regex("\\d+")))
-        count++
+        date++
+        //считанная цена
         val price = line.toInt()
-        do {
-            if (list.isEmpty() || price < list[i].first.first) {
-                list.add((price to count) to (price to count))
-                i++
-            } else if (price > list[i].second.first) {
-                list.add((price to count) to (price to count))
-                i++
-                val iterator = list.iterator()
-                var buy = 0
-                var buyCount = 0
-                var bool = false
-                while (iterator.hasNext()) {
-                    val element = iterator.next()
-                    val dif = element.second.first - element.first.first
-                    if (price - element.first.first > dif) {
-                        buy = element.first.first
-                        buyCount = element.first.second
-                        iterator.remove()
-                        i--
-                        bool = true
-                    } else if (price <= element.first.first && dif == 0) {
-                        iterator.remove()
-                        i--
-                    }
+
+        // если считанная цена ниже текущей цены покупки
+        if (list.isEmpty() || price < list[i].first.first) {
+            list.add((price to date) to (price to date))
+            i++
+
+            // если считанная цена выше текущей цены продажи
+        } else if (price > list[i].second.first) {
+            list.add((price to date) to (price to date))
+            i++
+
+            val iterator = list.iterator()
+            var buy = 0
+            var buyCount = 0
+            var bool = false
+
+            // пройдем по всем некогда добавленным в список парам buy-sell, чтобы убрать однозначно плохие варианты
+            // O(K)   K - количество элементов в list
+            while (iterator.hasNext()) {
+                // пара but-sell
+                val element = iterator.next()
+
+                // профит от пары <цена покупки, цена продажи>
+                val profit = element.second.first - element.first.first
+
+                // если считанная цена даёт больший профит, чем цена продажи из element
+                if (price - element.first.first > profit) {
+                    // Указываем цену покупки из element
+                    buy = element.first.first
+                    // Указываем дату покупки из element
+                    buyCount = element.first.second
+                    // удаляем element, так как нашли более подходящую пару but-sell а именно: <element.first.first, price>
+                    iterator.remove()
+                    i--
+                    bool = true
+
+                    // если текущая цена <= цена покупки у element && цена покупки и цена продажи у element совпадают
+                } else if (price <= element.first.first && profit == 0) {
+                    iterator.remove()
+                    i--
                 }
-                if (bool) {
-                    list.add((buy to buyCount) to (price to count))
-                    i++
-                }
+                // как видно, при варианте "текущая цена < цена покупки из element && профит от element > 0"
+                // element не удаляется, так как в диапазоне [дата покупки из element; текущая дата]
+                // может иметься такая цена продажи sell, что любая из следующих считанных цен будет < sell
             }
-        } while (i != list.lastIndex)
+            if (bool) {
+                list.add((buy to buyCount) to (price to date))
+                i++
+            }
+        }
     }
     require(list.isNotEmpty())
     val result = list.maxBy { it.second.first - it.first.first }!!

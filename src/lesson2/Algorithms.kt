@@ -166,35 +166,38 @@ fun josephTask(menNumber: Int, choiceInterval: Int): Int {
  * Если имеется несколько самых длинных общих подстрок одной длины,
  * вернуть ту из них, которая встречается раньше в строке first.
  */
+
+// Время - O(N^2 * K)   K - переменная, меняющаяся в ходе программы (K < N)
+// Память - O(N)
 fun longestCommonSubstring(first: String, second: String): String {
     val list = mutableListOf<MutableList<Int>>()
-    val result = mutableListOf<MutableList<Int>>()
+    var result = mutableListOf<Int>()
+
+    // O(N)
     for (i in first.indices) {
+        // O(N)
         for (j in second.indices)
             if (first[i] == second[j])
                 list.add(mutableListOf(j))
         var j = 1
         var iterator = list.iterator()
-        while (i + j < first.length) {
-            while (iterator.hasNext()) {
-                if (i + j >= first.length) break
-                val element = iterator.next()
-                if (element[0] + j > second.lastIndex) continue
-                if (first[i + j] == second[element[0] + j]) {
-                    element.add(element[0] + j)
-                    iterator = list.iterator()
-                    j++
-                } else {
-                    result.add(element)
-                    iterator.remove()
-                }
+
+        // O(K)
+        while (iterator.hasNext() && i + j < first.length) {
+            val element = iterator.next()
+            if (element[0] + j > second.lastIndex) continue
+            if (first[i + j] == second[element[0] + j]) {
+                element.add(element[0] + j)
+                iterator = list.iterator()
+                j++
+            } else {
+                if (element.size > result.size) result = element
+                iterator.remove()
             }
-            j++
         }
     }
     if (result.isEmpty()) return ""
-    val res = result.maxBy() { it.size }!!
-    return second.substring(res.first(), res.last() + 1)
+    return second.substring(result.first(), result.last() + 1)
 }
 
 /**

@@ -3,61 +3,10 @@
 package lesson1
 
 import java.io.File
+import java.lang.Integer.min
 import java.lang.StringBuilder
-import kotlin.math.min
 import kotlin.String
 
-fun <T : Comparable<T>> MutableList<T>.copyOfRange(begin: Int, end: Int): MutableList<T> {
-    val result = mutableListOf<T>()
-    for (i in begin until end) result.add(get(i))
-    return result
-}
-
-fun <T : Comparable<T>> merge(elements: MutableList<T>, begin: Int, middle: Int, end: Int): MutableList<T> {
-    val left = elements.copyOfRange(begin, middle)
-    val right = elements.copyOfRange(middle, end)
-    var li = 0
-    var ri = 0
-    for (i in begin until end)
-        if (li < left.size && (ri == right.size || left[li] <= right[ri])) elements[i] = left[li++]
-        else elements[i] = right[ri++]
-    return elements
-}
-
-fun <T : Comparable<T>> mergeSort(elements: MutableList<T>, begin: Int, end: Int) {
-    if (end - begin <= 1) return
-    val middle = (begin + end) / 2
-    mergeSort(elements, begin, middle)
-    mergeSort(elements, middle, end)
-    merge(elements, begin, middle, end)
-}
-
-fun <T : Comparable<T>> mergeSort(elements: MutableList<T>): MutableList<T> {
-    mergeSort(elements, 0, elements.size)
-    return elements
-}
-
-inline fun <T> fill(
-    elements: MutableList<T>,
-    inputName: String,
-    requiredFormat: String,
-    crossinline constructor: (String) -> T
-): MutableList<T> {
-    File(inputName).forEachLine { line ->
-        require(line.matches(Regex(requiredFormat)))
-        elements.add(constructor(line))
-    }
-    return elements
-}
-
-fun <T> write(elements: MutableList<T>, outputName: String) {
-    File(outputName).bufferedWriter().use { writer ->
-        elements.forEach {
-            writer.write(it.toString())
-            writer.newLine()
-        }
-    }
-}
 
 /**
  * Сортировка времён
@@ -101,7 +50,12 @@ fun sortTimes(inputName: String, outputName: String) {
         override fun toString(): String = name
     }
 
-    write(mergeSort(fill(mutableListOf(), inputName, "(0|1)\\d:[0-5]\\d:[0-5]\\d (P|A)M", ::Time)), outputName)
+    val list = mutableListOf<Time>()
+    File(inputName).forEachLine { line ->
+        require(line.matches(Regex("(0|1)\\d:[0-5]\\d:[0-5]\\d (P|A)M")))
+        list.add(Time(line))
+    }
+    File(outputName).bufferedWriter().use { writer -> list.sorted().forEach { writer.write("${it}\n") } }
 }
 
 /**
@@ -171,10 +125,9 @@ fun sortAddresses(inputName: String, outputName: String) {
         else resultList.add(Address(line.split(" - ")[1], mutableListOf(Name(nameAndAddress[0]))))
     }
 
-    for (item in resultList) mergeSort(item.listOfNames)
-    write(mergeSort(resultList), outputName)
+    for (item in resultList) item.listOfNames.sort()
+    File(outputName).bufferedWriter().use { writer -> resultList.sorted().forEach { writer.write("${it}\n") } }
 }
-
 
 /**
  * Сортировка температур
@@ -207,17 +160,15 @@ fun sortAddresses(inputName: String, outputName: String) {
  * 121.3
  */
 
-// Время - O(N*Log(N))
+// Время - O(N)
 // Память - O(N)
 fun sortTemperatures(inputName: String, outputName: String) {
-    class Temperature(val name: String) : Comparable<Temperature> {
-        val value = name.replace(".", "").toInt()
-
-        override operator fun compareTo(other: Temperature): Int = value - other.value
-        override fun toString(): String = name
+    val array = Array<Pair<Int, String?>>(7731) { 0 to null }
+    File(inputName).forEachLine { line ->
+        val i = line.replace(".", "").toInt() + 2730
+        array[i] = array[i].first + 1 to if (array[i].second == null) line else array[i].second
     }
-
-    write(mergeSort(fill(mutableListOf(), inputName, "-?(([0-5]\\d\\d)|(\\d\\d)|(\\d)).\\d", ::Temperature)), outputName)
+    File(outputName).bufferedWriter().use { writer -> array.forEach { for (i in 1..it.first) writer.write("${it.second}\n") } }
 }
 
 /**
@@ -250,31 +201,62 @@ fun sortTemperatures(inputName: String, outputName: String) {
  * 2
  */
 
-// Время - O(N*Log(N))
+// Время - O(N + K)   K - разность между макс. и мин. цифрой
 // Память - O(N)
 fun sortSequence(inputName: String, outputName: String) {
-    val list = mutableListOf<Number>()
-    val map = mutableMapOf<String, Int>()
+    val sourceList = mutableListOf<Int>()
+    var max = Int.MIN_VALUE
+    var min = Int.MAX_VALUE
+
+    // O(N)
     File(inputName).forEachLine { line ->
-        require(line.matches(Regex("\\d+")))
-        map[line] = map.getOrDefault(line, 0) + 1
-        list.add(Number(line))
+        val intLine = line.toInt()
+        if (intLine > max) max = intLine
+        if (intLine < min) min = intLine
+        sourceList.add(intLine)
     }
-    if (map.isEmpty()) return
-    val targetAmount = map.maxBy { it.value }!!.value
-    Number.targetNumber = map.filter { entry -> entry.value == targetAmount }.minBy { it.key }!!.key.toInt()
-    write(mergeSort(list), outputName)
-}
 
-class Number(val name: String) : Comparable<Number> {
-    companion object { var targetNumber = 0 }
+    val arrayOfCounters = Array<Int?>(max - min + 1) { null }
 
-    val number = name.toInt()
+    // O(N)
+    for (i in sourceList) {
+        arrayOfCounters[i - min] =
+            if (arrayOfCounters[i - min] == null) 1
+            else arrayOfCounters[i - min]?.plus(1)
+    }
 
-    override fun compareTo(other: Number): Int =
-        if (number != targetNumber && other.number == targetNumber) -1 else if (other.number != targetNumber && number == targetNumber) 1 else 0
+    var listOfCounters = mutableListOf<Pair<Int, Int>>()
 
-    override fun toString(): String = name
+    // O(max - min) - здесь могут быть наибольшие просадки
+    for (i in arrayOfCounters.indices)
+        if (arrayOfCounters[i] != null)
+            listOfCounters.add(i to arrayOfCounters[i]!!)
+
+    var maxCount = 0
+    var targetIndex = 0
+
+    // O(<= N)
+    for (i in listOfCounters.indices) {
+        if (maxCount < listOfCounters[i].second) {
+            targetIndex = listOfCounters[i].first
+            maxCount = listOfCounters[i].second
+        }
+    }
+    val targetNumber = targetIndex + min
+    val resultArray = IntArray(sourceList.size)
+    var index = 0
+
+    // O(<= N)
+    for (item in sourceList) {
+        if (item != targetNumber) {
+            resultArray[index] = item
+            index++
+        }
+    }
+    for (i in index until sourceList.size) {
+        resultArray[i] = targetNumber
+    }
+    File(outputName).bufferedWriter().use { writer -> resultArray.forEach { writer.write("$it\n") } }
 }
 
 /**
@@ -291,11 +273,15 @@ class Number(val name: String) : Comparable<Number> {
  *
  * Результат: second = [1 3 4 9 9 13 15 20 23 28]
  */
-fun <T : Comparable<T>> mergeArrays(first: Array<T>, second: Array<T?>) {
-    val list = mutableListOf<T>()
-    second.forEachIndexed() { i, t -> list.add(if (i < first.size) first[i] else second[i]!!) }
-    merge(list, 0, first.size, second.size)
-    for (i in second.indices) second[i] = list[i]
-}
 
+// Время - O(N)
+// Память - O(N)
+fun <T : Comparable<T>> mergeArrays(first: Array<T>, second: Array<T?>) {
+    val right = second.copyOfRange(first.size, second.size)
+    var li = 0
+    var ri = 0
+    for (i in second.indices)
+        if (li < first.size && (ri == right.size || first[li] <= right[ri]!!)) second[i] = first[li++]
+        else second[i] = right[ri++]
+}
 

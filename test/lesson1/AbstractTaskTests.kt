@@ -13,6 +13,30 @@ abstract class AbstractTaskTests : AbstractFileTests() {
 
     protected fun sortTimes(sortTimes: (String, String) -> Unit) {
         try {
+            sortTimes("texts/time_custom_in1.txt", "temp.txt")
+            assertFileContent(
+                "temp.txt",
+                """
+                     12:44:48 AM
+                     02:24:50 AM
+                     02:32:00 AM
+                     06:06:06 AM
+                     08:24:12 AM
+                     08:57:18 AM
+                     10:10:11 AM
+                     11:04:01 AM
+                     12:06:06 PM
+                     06:06:06 PM
+                     07:02:35 PM
+                     07:08:14 PM
+                     11:19:50 PM
+                """.trimIndent()
+            )
+        } finally {
+            File("temp.txt").delete()
+        }
+
+        try {
             sortTimes("input/time_in1.txt", "temp.txt")
             assertFileContent(
                 "temp.txt",
@@ -48,6 +72,21 @@ abstract class AbstractTaskTests : AbstractFileTests() {
     }
 
     protected fun sortAddresses(sortAddresses: (String, String) -> Unit) {
+        try {
+            sortAddresses("texts/addr_custom_in1.txt", "temp.txt")
+            assertFileContent(
+                "temp.txt",
+                """
+                    Компьютерная 24 - Иванов Андрей, Лобанова София, Моргунова Анастасия
+                    Программная 12 - аа Бббб, аа Ббббб
+                    Системная 124 - Воронцов Роман, Иванов Андрей
+                    Технологическая 4421 - Сидоров Петр, Сидорова Мария
+                """.trimIndent()
+            )
+        } finally {
+            File("temp.txt").delete()
+        }
+
         try {
             sortAddresses("input/addr_in1.txt", "temp.txt")
             assertFileContent(
@@ -101,6 +140,25 @@ abstract class AbstractTaskTests : AbstractFileTests() {
     }
 
     protected fun sortTemperatures(sortTemperatures: (String, String) -> Unit) {
+        try {
+            sortTemperatures("texts/temp_custom_in1.txt", "temp.txt")
+            assertFileContent(
+                "temp.txt",
+                """
+                    -273.0
+                    -0.3
+                    0.0
+                    0.2
+                    4.4
+                    96.5
+                    213.2
+                    500.0
+                """.trimIndent()
+            )
+        } finally {
+            File("temp.txt").delete()
+        }
+
         try {
             sortTemperatures("input/temp_in1.txt", "temp.txt")
             assertFileContent(
@@ -182,6 +240,13 @@ abstract class AbstractTaskTests : AbstractFileTests() {
     }
 
     protected fun sortSequence(sortSequence: (String, String) -> Unit) {
+        try {
+            sortSequence("texts/seq_custom_in1.txt", "temp.txt")
+            assertFileContent("temp.txt", File("texts/seq_custom_out1.txt").readLines())
+        } finally {
+            File("temp.txt").delete()
+        }
+
         try {
             sortSequence("input/seq_in1.txt", "temp.txt")
             assertFileContent(
@@ -323,6 +388,15 @@ abstract class AbstractTaskTests : AbstractFileTests() {
     }
 
     protected fun mergeArrays(mergeArrays: (Array<Int>, Array<Int?>) -> Unit) {
+        var customResult = arrayOf<Int?>(null, null)
+        mergeArrays(arrayOf(1, 0), customResult)
+        assertArrayEquals(arrayOf(1, 0), customResult)
+
+        customResult = arrayOf<Int?>()
+        mergeArrays(arrayOf(), customResult)
+        assertArrayEquals(arrayOf(), customResult)
+
+
         val result = arrayOf(null, null, null, null, null, 1, 3, 9, 13, 18, 23)
         mergeArrays(arrayOf(4, 9, 15, 20, 23), result)
         assertArrayEquals(arrayOf(1, 3, 4, 9, 9, 13, 15, 18, 20, 23, 23), result)

@@ -43,6 +43,10 @@ abstract class AbstractAlgorithmsTests {
     }
 
     fun optimizeBuyAndSell(optimizeBuyAndSell: (String) -> Pair<Int, Int>) {
+        assertEquals(1 to 1, optimizeBuyAndSell("texts/buysell_custom_in1.txt"))
+        assertEquals(3 to 6, optimizeBuyAndSell("texts/buysell_custom_in2.txt"))
+        assertEquals(8 to 10, optimizeBuyAndSell("texts/buysell_custom_in3.txt"))
+
         assertEquals(3 to 4, optimizeBuyAndSell("input/buysell_in1.txt"))
         assertEquals(8 to 12, optimizeBuyAndSell("input/buysell_in2.txt"))
         assertEquals(3 to 4, optimizeBuyAndSell("input/buysell_in3.txt"))
@@ -61,6 +65,9 @@ abstract class AbstractAlgorithmsTests {
     }
 
     fun josephTask(josephTask: (Int, Int) -> Int) {
+        assertEquals(3, josephTask(3, 1))
+        assertEquals(1, josephTask(4, 2))
+
         assertEquals(1, josephTask(1, 1))
         assertEquals(2, josephTask(2, 1))
         assertEquals(50000000, josephTask(50000000, 1))
@@ -74,6 +81,12 @@ abstract class AbstractAlgorithmsTests {
     }
 
     fun longestCommonSubstring(longestCommonSubstring: (String, String) -> String) {
+        assertEquals("", longestCommonSubstring("аааа", "АААА"))
+        assertEquals("д", longestCommonSubstring("абвд", "дгеё"))
+        assertEquals("абвгд", longestCommonSubstring("абвгд", "абвгд"))
+        assertEquals("бра", longestCommonSubstring("крякозябра", "чупокабра"))
+        assertEquals("кпарамр", longestCommonSubstring("мвпарапвпукпарамрурцпарау", "мупарамумпаралллллкпарамрру43"))
+
         assertEquals("", longestCommonSubstring("мой мир", "я"))
         assertEquals("зд", longestCommonSubstring("здравствуй мир", "мы здесь"))
         assertEquals("СЕРВАТОР", longestCommonSubstring("ОБСЕРВАТОРИЯ", "КОНСЕРВАТОРЫ"))
@@ -123,6 +136,10 @@ abstract class AbstractAlgorithmsTests {
     }
 
     fun calcPrimesNumber(calcPrimesNumber: (Int) -> Int) {
+        assertEquals(0, calcPrimesNumber(-100))
+        assertEquals(3, calcPrimesNumber(5))
+        assertEquals(4, calcPrimesNumber(8))
+
         assertEquals(0, calcPrimesNumber(-1))
         assertEquals(0, calcPrimesNumber(1))
         assertEquals(1, calcPrimesNumber(2))

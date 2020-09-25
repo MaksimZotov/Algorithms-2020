@@ -177,8 +177,11 @@ fun longestCommonSubstring(first: String, second: String): String {
     for (i in first.indices) {
         // O(N)
         for (j in second.indices)
-            if (first[i] == second[j])
+            if (first[i] == second[j]) {
                 list.add(mutableListOf(j))
+                if (result.isEmpty())
+                    result = list.last()
+            }
         var j = 1
         var iterator = list.iterator()
 

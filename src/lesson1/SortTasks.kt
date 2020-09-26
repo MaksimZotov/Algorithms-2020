@@ -227,7 +227,7 @@ fun sortSequence(inputName: String, outputName: String) {
 
     var listOfCounters = mutableListOf<Pair<Int, Int>>()
 
-    // O(max - min) - здесь могут быть наибольшие просадки
+    // O(max - min) - здесь могут быть наибольшие просадки (Если диапазон значений мал (max - min <= N), то алгоритм показывает O(N))
     for (i in arrayOfCounters.indices)
         if (arrayOfCounters[i] != null)
             listOfCounters.add(i to arrayOfCounters[i]!!)
@@ -243,20 +243,22 @@ fun sortSequence(inputName: String, outputName: String) {
         }
     }
     val targetNumber = targetIndex + min
-    val resultArray = IntArray(sourceList.size)
     var index = 0
 
-    // O(<= N)
-    for (item in sourceList) {
-        if (item != targetNumber) {
-            resultArray[index] = item
-            index++
+    File(outputName).bufferedWriter().use { writer ->
+        // O(N)
+        for (item in sourceList) {
+            if (item != targetNumber) {
+                writer.write("$item\n")
+                index++
+            }
+        }
+
+        // O(<= N)
+        for (i in index until sourceList.size) {
+            writer.write("$targetNumber\n")
         }
     }
-    for (i in index until sourceList.size) {
-        resultArray[i] = targetNumber
-    }
-    File(outputName).bufferedWriter().use { writer -> resultArray.forEach { writer.write("$it\n") } }
 }
 
 /**

@@ -167,40 +167,58 @@ fun josephTask(menNumber: Int, choiceInterval: Int): Int {
  * вернуть ту из них, которая встречается раньше в строке first.
  */
 
-// Время - O(N * (N + K))   K - переменная, меняющаяся в ходе работы программы (K < N)
-// Память - O(N)
+// Время - O(N * (N + K))   K - переменная, меняющаяся в ходе работы программы (K <= N)
+// Память - O(<= N)
 fun longestCommonSubstring(first: String, second: String): String {
-    val list = mutableListOf<MutableList<Int>>()
-    var result = mutableListOf<Int>()
+    // Лист пар <Начальный индекс подстроки в second, Длина подстроки>
+    val list = mutableListOf<Pair<Int, Int>>()
+    var result = -1 to -1
 
     // O(N)
     for (i in first.indices) {
         // O(N)
         for (j in second.indices)
             if (first[i] == second[j]) {
-                list.add(mutableListOf(j))
-                if (result.isEmpty())
+                list.add(j to 1)
+                if (result.second < 0)
                     result = list.last()
             }
-        var j = 1
-        var iterator = list.iterator()
 
-        // O(K)
-        while (iterator.hasNext() && i + j < first.length) {
-            val element = iterator.next()
-            if (element[0] + j > second.lastIndex) continue
-            if (first[i + j] == second[element[0] + j]) {
-                element.add(element[0] + j)
-                iterator = list.iterator()
-                j++
-            } else {
-                if (element.size > result.size) result = element
-                iterator.remove()
+        val iterator = list.iterator()
+        if (iterator.hasNext()) {
+            var indexes = iterator.next()
+
+            // O(K)
+            while (true) {
+                if (indexes.second > result.second) {
+                    result = indexes
+                }
+                if (i + indexes.second > first.lastIndex || indexes.first + indexes.second > second.lastIndex) {
+                    iterator.remove()
+                    if (iterator.hasNext()) {
+                        indexes = iterator.next()
+                        continue
+                    } else
+                        break
+                }
+                if (first[i + indexes.second] == second[indexes.first + indexes.second]) {
+                    indexes = indexes.first to indexes.second + 1
+                } else {
+                    if (indexes.second > result.second) {
+                        result = indexes
+                    }
+                    iterator.remove()
+                    if (iterator.hasNext()) {
+                        indexes = iterator.next()
+                        continue
+                    } else
+                        break
+                }
             }
         }
     }
-    if (result.isEmpty()) return ""
-    return second.substring(result.first(), result.last() + 1)
+    if (result.first < 0) return ""
+    return second.substring(result.first, result.first + result.second)
 }
 
 /**
@@ -215,7 +233,7 @@ fun longestCommonSubstring(first: String, second: String): String {
  */
 
 // Время - O(N^(3/2))
-// Память - O(N)
+// Память - O(1)
 fun calcPrimesNumber(limit: Int): Int {
     if (limit <= 1) return 0
     var count = 1

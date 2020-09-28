@@ -1,6 +1,8 @@
 package lesson3
 
+import java.lang.IllegalStateException
 import java.util.*
+import kotlin.NoSuchElementException
 import kotlin.math.max
 
 // attention: Comparable is supported but Comparator is not
@@ -79,6 +81,8 @@ class KtBinarySearchTree<T : Comparable<T>> : AbstractMutableSet<T>(), Checkable
      *
      * Средняя
      */
+
+    // Время - O(Log(N)) при равномерном распределении или O(N) при распределении в виде списка
     override fun remove(element: T): Boolean =
         root?.let { remove(it, element) } ?: false
 
@@ -153,9 +157,16 @@ class KtBinarySearchTree<T : Comparable<T>> : AbstractMutableSet<T>(), Checkable
          *
          * Средняя
          */
+
         override fun hasNext(): Boolean {
-            // TODO
-            throw NotImplementedError()
+            return minNode != null
+        }
+
+        private var minNode = root?.let { findMin(it) }
+        private var prevMinNode: Node<T>? = null
+
+        private fun findMin(start: Node<T>): Node<T> {
+            return start.left?.let { findMin(start.left!!) } ?: start
         }
 
         /**
@@ -171,9 +182,23 @@ class KtBinarySearchTree<T : Comparable<T>> : AbstractMutableSet<T>(), Checkable
          *
          * Средняя
          */
+
+        // Время - O(Log(N)) при равномерном распределении или O(N) при распределении в виде списка
         override fun next(): T {
-            // TODO
-            throw NotImplementedError()
+            if (root == null || minNode == null) throw IllegalStateException()
+            prevMinNode = minNode
+            minNode?.let { setNewMin(root!!) }
+            if (prevMinNode == null) throw IllegalStateException()
+            return prevMinNode!!.value
+        }
+
+        private fun setNewMin(start: Node<T>) {
+            when {
+                start.value.compareTo(minNode!!.value) > 0 -> minNode = start
+                start.left != null -> setNewMin(start.left!!)
+                start.right != null -> setNewMin(start.right!!)
+                else -> minNode = null
+            }
         }
 
         /**
@@ -188,11 +213,11 @@ class KtBinarySearchTree<T : Comparable<T>> : AbstractMutableSet<T>(), Checkable
          *
          * Сложная
          */
-        override fun remove() {
-            // TODO
-            throw NotImplementedError()
-        }
 
+        // Время - O(Log(N)) при равномерном распределении или O(N) при распределении в виде списка
+        override fun remove() {
+            if (prevMinNode == null || !remove(prevMinNode!!.value)) throw IllegalStateException()
+        }
     }
 
     /**

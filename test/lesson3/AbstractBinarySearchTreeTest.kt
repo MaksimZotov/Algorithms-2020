@@ -106,14 +106,14 @@ abstract class AbstractBinarySearchTreeTest {
         }
     }
 
-    fun test(testSet: MutableSet<Int>, toRemove: Int) {
-        println("Initial custom set: $testSet")
+    fun doRemoveTest(controlSet: MutableSet<Int>, toRemove: Int) {
+        println("Initial set: $controlSet")
         val binarySet = create()
-        for (element in testSet) {
+        for (element in controlSet) {
             binarySet += element
         }
-        testSet.remove(toRemove)
-        println("Control custom set: $testSet")
+        controlSet.remove(toRemove)
+        println("Control set: $controlSet")
         val expectedSize = binarySet.size - 1
         val maxHeight = binarySet.height()
         println("Removing element $toRemove from the tree...")
@@ -141,7 +141,7 @@ abstract class AbstractBinarySearchTreeTest {
             expectedSize, binarySet.size,
             "The size of the tree is incorrect: was ${binarySet.size}, should've been $expectedSize."
         )
-        for (element in testSet) {
+        for (element in controlSet) {
             assertTrue(
                 binarySet.contains(element),
                 "The tree doesn't have the element $element from the control set."
@@ -151,16 +151,15 @@ abstract class AbstractBinarySearchTreeTest {
     }
 
     protected fun doRemoveTest() {
+        doRemoveTest(mutableSetOf(5), 5)
+        doRemoveTest(mutableSetOf(3, 42), 3)
+        doRemoveTest(mutableSetOf(3, 0), 3)
+        doRemoveTest(mutableSetOf(3, 42, 26, 0), 3)
+        doRemoveTest(mutableSetOf(67, 35, 17, 31, 23, 6, 51, 7, 96, 75, 61, 70, 12, 44, 62, 19, 8, 45, 65), 51)
+        doRemoveTest(mutableSetOf(73, 38, 0, 19, 16, 75, 10, 95, 62, 60, 71, 94, 85, 46, 57, 55, 31, 13), 62)
+        doRemoveTest(mutableSetOf(49, 70, 89, 80, 60, 42, 95, 92, 93, 72, 20, 9, 8, 46, 50, 97, 16, 69), 42)
+
         implementationTest { create().remove(0) }
-
-        test(mutableSetOf(5), 5)
-        test(mutableSetOf(3, 42), 3)
-        test(mutableSetOf(3, 0), 3)
-        test(mutableSetOf(3, 42, 26, 0), 3)
-        test(mutableSetOf(67, 35, 17, 31, 23, 6, 51, 7, 96, 75, 61, 70, 12, 44, 62, 19, 8, 45, 65), 51)
-        test(mutableSetOf(73, 38, 0, 19, 16, 75, 10, 95, 62, 60, 71, 94, 85, 46, 57, 55, 31, 13), 62)
-        test(mutableSetOf(49, 70, 89, 80, 60, 42, 95, 92, 93, 72, 20, 9, 8, 46, 50, 97, 16, 69), 42)
-
         val random = Random()
         for (iteration in 1..100) {
             val controlSet = mutableSetOf<Int>()
@@ -173,51 +172,48 @@ abstract class AbstractBinarySearchTreeTest {
                     toRemove = newNumber
                 }
             }
-            println("Initial set: $controlSet")
-            val binarySet = create()
-            for (element in controlSet) {
-                binarySet += element
-            }
-            controlSet.remove(toRemove)
-            println("Control set: $controlSet")
-            val expectedSize = binarySet.size - 1
-            val maxHeight = binarySet.height()
-            println("Removing element $toRemove from the tree...")
-            assertTrue(
-                binarySet.remove(toRemove),
-                "An element was supposedly not removed from the tree when it should have been."
-            )
-            assertTrue(
-                toRemove !in binarySet,
-                "The tree contains a supposedly removed element."
-            )
-            assertTrue(
-                binarySet.checkInvariant(),
-                "The binary search tree invariant is false after BinarySearchTree.remove()."
-            )
-            assertTrue(
-                binarySet.height() <= maxHeight,
-                "The tree's height increased after BinarySearchTree.remove()."
-            )
-            assertFalse(
-                binarySet.remove(toRemove),
-                "An element that was already not in the tree was supposedly removed."
-            )
-            assertEquals(
-                expectedSize, binarySet.size,
-                "The size of the tree is incorrect: was ${binarySet.size}, should've been $expectedSize."
-            )
-            for (element in controlSet) {
-                assertTrue(
-                    binarySet.contains(element),
-                    "The tree doesn't have the element $element from the control set."
-                )
-            }
-            println("All clear!")
+            doRemoveTest(controlSet, toRemove)
         }
     }
 
+    private fun doIteratorTest(controlSet: TreeSet<Int>) {
+        println("Control set: $controlSet")
+        val binarySet = create()
+        assertFalse(
+            binarySet.iterator().hasNext(),
+            "Iterator of an empty tree should not have any next elements."
+        )
+        for (element in controlSet) {
+            binarySet += element
+        }
+        val iterator1 = binarySet.iterator()
+        val iterator2 = binarySet.iterator()
+        println("Checking if calling hasNext() changes the state of the iterator...")
+        while (iterator1.hasNext()) {
+            assertEquals(
+                iterator2.next(), iterator1.next(),
+                "Calling BinarySearchTreeIterator.hasNext() changes the state of the iterator."
+            )
+        }
+        val controlIter = controlSet.iterator()
+        val binaryIter = binarySet.iterator()
+        println("Checking if the iterator traverses the tree correctly...")
+        while (controlIter.hasNext()) {
+            assertEquals(
+                controlIter.next(), binaryIter.next(),
+                "BinarySearchTreeIterator doesn't traverse the tree correctly."
+            )
+        }
+        assertFailsWith<IllegalStateException>("Something was supposedly returned after the elements ended") {
+            binaryIter.next()
+        }
+        println("All clear!")
+    }
+
     protected fun doIteratorTest() {
+        doIteratorTest(TreeSet(listOf(3, 2, 6, 1, 4, 8, 5)))
+        doIteratorTest(TreeSet(listOf()))
+
         implementationTest { create().iterator().hasNext() }
         implementationTest { create().iterator().next() }
         val random = Random()
@@ -226,41 +222,67 @@ abstract class AbstractBinarySearchTreeTest {
             for (i in 1..20) {
                 controlSet.add(random.nextInt(100))
             }
-            println("Control set: $controlSet")
-            val binarySet = create()
-            assertFalse(
-                binarySet.iterator().hasNext(),
-                "Iterator of an empty tree should not have any next elements."
-            )
-            for (element in controlSet) {
-                binarySet += element
-            }
-            val iterator1 = binarySet.iterator()
-            val iterator2 = binarySet.iterator()
-            println("Checking if calling hasNext() changes the state of the iterator...")
-            while (iterator1.hasNext()) {
-                assertEquals(
-                    iterator2.next(), iterator1.next(),
-                    "Calling BinarySearchTreeIterator.hasNext() changes the state of the iterator."
-                )
-            }
-            val controlIter = controlSet.iterator()
-            val binaryIter = binarySet.iterator()
-            println("Checking if the iterator traverses the tree correctly...")
-            while (controlIter.hasNext()) {
-                assertEquals(
-                    controlIter.next(), binaryIter.next(),
-                    "BinarySearchTreeIterator doesn't traverse the tree correctly."
-                )
-            }
-            assertFailsWith<IllegalStateException>("Something was supposedly returned after the elements ended") {
-                binaryIter.next()
-            }
-            println("All clear!")
+            doIteratorTest(controlSet)
         }
     }
 
+    private fun doIteratorRemoveTest(controlSet: TreeSet<Int>, toRemove: Int) {
+        println("Initial set: $controlSet")
+        val binarySet = create()
+        for (element in controlSet) {
+            binarySet += element
+        }
+        controlSet.remove(toRemove)
+        println("Control set: $controlSet")
+        println("Removing element $toRemove from the tree through the iterator...")
+        val iterator = binarySet.iterator()
+        assertFailsWith<IllegalStateException>("Something was supposedly removed before the iteration started") {
+            iterator.remove()
+        }
+        var counter = binarySet.size
+        print("Iterating: ")
+        while (iterator.hasNext()) {
+            val element = iterator.next()
+            print("$element, ")
+            counter--
+            if (element == toRemove) {
+                iterator.remove()
+                assertFailsWith<IllegalStateException>("BinarySearchTreeIterator.remove() was successfully called twice in a row.") {
+                    iterator.remove()
+                }
+            }
+        }
+        assertEquals(
+            0, counter,
+            "BinarySearchTreeIterator.remove() changed iterator position: ${abs(counter)} elements were ${if (counter > 0) "skipped" else "revisited"}."
+        )
+        assertTrue(
+            binarySet.checkInvariant(),
+            "The binary search tree invariant is false after BinarySearchTreeIterator.remove()."
+        )
+        assertEquals(
+            controlSet.size, binarySet.size,
+            "The size of the tree is incorrect: was ${binarySet.size}, should've been ${controlSet.size}."
+        )
+        for (element in controlSet) {
+            assertTrue(
+                binarySet.contains(element),
+                "The tree doesn't have the element $element from the control set."
+            )
+        }
+        for (element in binarySet) {
+            assertTrue(
+                controlSet.contains(element),
+                "The tree has the element $element that is not in control set."
+            )
+        }
+        println("All clear!")
+    }
+
     protected fun doIteratorRemoveTest() {
+        doIteratorRemoveTest(TreeSet(listOf(0, 2, 3)), 5)
+        doIteratorRemoveTest(TreeSet(listOf()), 0)
+
         implementationTest { create().iterator().remove() }
         val random = Random()
         for (iteration in 1..100) {
@@ -274,56 +296,7 @@ abstract class AbstractBinarySearchTreeTest {
                     toRemove = newNumber
                 }
             }
-            println("Initial set: $controlSet")
-            val binarySet = create()
-            for (element in controlSet) {
-                binarySet += element
-            }
-            controlSet.remove(toRemove)
-            println("Control set: $controlSet")
-            println("Removing element $toRemove from the tree through the iterator...")
-            val iterator = binarySet.iterator()
-            assertFailsWith<IllegalStateException>("Something was supposedly removed before the iteration started") {
-                iterator.remove()
-            }
-            var counter = binarySet.size
-            print("Iterating: ")
-            while (iterator.hasNext()) {
-                val element = iterator.next()
-                print("$element, ")
-                counter--
-                if (element == toRemove) {
-                    iterator.remove()
-                    assertFailsWith<IllegalStateException>("BinarySearchTreeIterator.remove() was successfully called twice in a row.") {
-                        iterator.remove()
-                    }
-                }
-            }
-            assertEquals(
-                0, counter,
-                "BinarySearchTreeIterator.remove() changed iterator position: ${abs(counter)} elements were ${if (counter > 0) "skipped" else "revisited"}."
-            )
-            assertTrue(
-                binarySet.checkInvariant(),
-                "The binary search tree invariant is false after BinarySearchTreeIterator.remove()."
-            )
-            assertEquals(
-                controlSet.size, binarySet.size,
-                "The size of the tree is incorrect: was ${binarySet.size}, should've been ${controlSet.size}."
-            )
-            for (element in controlSet) {
-                assertTrue(
-                    binarySet.contains(element),
-                    "The tree doesn't have the element $element from the control set."
-                )
-            }
-            for (element in binarySet) {
-                assertTrue(
-                    controlSet.contains(element),
-                    "The tree has the element $element that is not in control set."
-                )
-            }
-            println("All clear!")
+            doIteratorRemoveTest(controlSet, toRemove)
         }
     }
 

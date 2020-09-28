@@ -79,8 +79,60 @@ class KtBinarySearchTree<T : Comparable<T>> : AbstractMutableSet<T>(), Checkable
      *
      * Средняя
      */
-    override fun remove(element: T): Boolean {
-        TODO()
+    override fun remove(element: T): Boolean =
+        root?.let { remove(it, element) } ?: false
+
+    private fun remove(start: Node<T>, value: T): Boolean {
+        val comparison = value.compareTo(start.value)
+        return if (comparison != 0) {
+            val next = if (comparison < 0) start.left else start.right
+            when {
+                next == null -> false
+                value.compareTo(next.value) != 0 -> remove(next, value)
+                else -> remove(start, next, comparison > 0)
+            }
+        } else {
+            val auxiliary = root!!
+            remove(auxiliary, auxiliary, true)
+            root = auxiliary.right
+            true
+        }
+    }
+
+    private fun remove(parent: Node<T>, child: Node<T>, childIsRightOf: Boolean): Boolean {
+        if (child.left == null || child.right == null) {
+            val child = when {
+                child.left == null && child.right == null -> null
+                child.left == null -> child.right
+                else -> child.left
+            }
+            if (childIsRightOf) parent.right = child else parent.left = child
+            size--
+            return true
+        }
+        val min = if (child.right!!.left == null) {
+            val res = child.right!!
+            child.right = child.right!!.right
+            size--
+            res
+        } else {
+            findMin(child.right!!)
+        }
+        min.left = child.left
+        min.right = child.right
+        if (childIsRightOf) parent.right = min else parent.left = min
+        return true
+    }
+
+    private fun findMin(start: Node<T>): Node<T> {
+        return if (start.left!!.left == null) {
+            val res = start.left!!
+            start.left = start.left!!.right
+            size--
+            res
+        } else {
+            findMin(start.left!!)
+        }
     }
 
     override fun comparator(): Comparator<in T>? =

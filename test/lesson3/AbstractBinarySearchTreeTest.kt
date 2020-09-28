@@ -106,8 +106,61 @@ abstract class AbstractBinarySearchTreeTest {
         }
     }
 
+    fun test(testSet: MutableSet<Int>, toRemove: Int) {
+        println("Initial custom set: $testSet")
+        val binarySet = create()
+        for (element in testSet) {
+            binarySet += element
+        }
+        testSet.remove(toRemove)
+        println("Control custom set: $testSet")
+        val expectedSize = binarySet.size - 1
+        val maxHeight = binarySet.height()
+        println("Removing element $toRemove from the tree...")
+        assertTrue(
+            binarySet.remove(toRemove),
+            "An element was supposedly not removed from the tree when it should have been."
+        )
+        assertTrue(
+            toRemove !in binarySet,
+            "The tree contains a supposedly removed element."
+        )
+        assertTrue(
+            binarySet.checkInvariant(),
+            "The binary search tree invariant is false after BinarySearchTree.remove()."
+        )
+        assertTrue(
+            binarySet.height() <= maxHeight,
+            "The tree's height increased after BinarySearchTree.remove()."
+        )
+        assertFalse(
+            binarySet.remove(toRemove),
+            "An element that was already not in the tree was supposedly removed."
+        )
+        assertEquals(
+            expectedSize, binarySet.size,
+            "The size of the tree is incorrect: was ${binarySet.size}, should've been $expectedSize."
+        )
+        for (element in testSet) {
+            assertTrue(
+                binarySet.contains(element),
+                "The tree doesn't have the element $element from the control set."
+            )
+        }
+        println("All clear!")
+    }
+
     protected fun doRemoveTest() {
         implementationTest { create().remove(0) }
+
+        test(mutableSetOf(5), 5)
+        test(mutableSetOf(3, 42), 3)
+        test(mutableSetOf(3, 0), 3)
+        test(mutableSetOf(3, 42, 26, 0), 3)
+        test(mutableSetOf(67, 35, 17, 31, 23, 6, 51, 7, 96, 75, 61, 70, 12, 44, 62, 19, 8, 45, 65), 51)
+        test(mutableSetOf(73, 38, 0, 19, 16, 75, 10, 95, 62, 60, 71, 94, 85, 46, 57, 55, 31, 13), 62)
+        test(mutableSetOf(49, 70, 89, 80, 60, 42, 95, 92, 93, 72, 20, 9, 8, 46, 50, 97, 16, 69), 42)
+
         val random = Random()
         for (iteration in 1..100) {
             val controlSet = mutableSetOf<Int>()

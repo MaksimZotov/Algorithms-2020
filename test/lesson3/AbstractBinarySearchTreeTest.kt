@@ -176,7 +176,7 @@ abstract class AbstractBinarySearchTreeTest {
         }
     }
 
-    private fun doIteratorTest(controlSet: TreeSet<Int>) {
+    private fun doIteratorTest(controlSet: Set<Int>) {
         println("Control set: $controlSet")
         val binarySet = create()
         assertFalse(
@@ -195,12 +195,14 @@ abstract class AbstractBinarySearchTreeTest {
                 "Calling BinarySearchTreeIterator.hasNext() changes the state of the iterator."
             )
         }
-        val controlIter = controlSet.iterator()
+        val controlIter = controlSet.sorted().iterator()
         val binaryIter = binarySet.iterator()
         println("Checking if the iterator traverses the tree correctly...")
         while (controlIter.hasNext()) {
+            val t1 = controlIter.next()
+            val t2 = binaryIter.next()
             assertEquals(
-                controlIter.next(), binaryIter.next(),
+                t1, t2,
                 "BinarySearchTreeIterator doesn't traverse the tree correctly."
             )
         }
@@ -211,6 +213,8 @@ abstract class AbstractBinarySearchTreeTest {
     }
 
     protected fun doIteratorTest() {
+        doIteratorTest(setOf(6, 7, 1, 13, 8))
+        doIteratorTest(setOf(97, 55, 49, 56, 45, 8, 54, 6, 66, 99, 43, 41, 62, 7, 51, 89, 11, 98, 84, 52, 92, 73, 1, 93, 47, 5))
         doIteratorTest(TreeSet(listOf(3, 2, 6, 1, 4, 8, 5)))
         doIteratorTest(TreeSet(listOf()))
 
@@ -300,12 +304,49 @@ abstract class AbstractBinarySearchTreeTest {
         }
     }
 
+    private fun doSubSetTest(controlSet: MutableSet<Int>, fromElement: Int, toElement: Int) {
+        val initialSet = create()
+        for (element in controlSet) {
+            initialSet.add(element)
+        }
+        println("Control set: $controlSet")
+        val subSet = initialSet.subSet(fromElement, toElement)
+        println("Checking if the boundaries of the subset from $fromElement to $toElement are respected...")
+        for (element in controlSet) {
+            assertEquals(
+                element in fromElement until toElement, subSet.contains(element),
+                "$element is ${if (element in subSet) "" else "not"} in the subset when it should ${if (element in subSet) "not" else ""} be."
+            )
+            if (element in fromElement until toElement) {
+                assertTrue(
+                    subSet.remove(element),
+                    "An element of the subset was not removed."
+                )
+            } else {
+                assertFailsWith<IllegalArgumentException>("An illegal argument was passed to remove() without raising an exception") {
+                    subSet.remove(element)
+                }
+            }
+        }
+        val validAddition = toElement - 1
+        assertDoesNotThrow("An exception is thrown on the attempt of adding a valid element") {
+            subSet.add(validAddition)
+        }
+        val invalidAddition = fromElement - 1
+        assertFailsWith<IllegalArgumentException>("An illegal argument was passed to add() without raising an exception") {
+            subSet.add(invalidAddition)
+        }
+        println("All clear!")
+    }
+
     protected fun doSubSetTest() {
-        implementationTest { create().subSet(0, 0) }
-        assertEquals(
-            0, create().subSet(0, 0).size,
-            "The subset with the same lower and upper bounds is not empty."
-        )
+        doSubSetTest(mutableSetOf(97, 55, 49, 56, 45, 8, 54, 6, 66, 99, 43, 41, 62, 7, 51, 89, 11, 98, 84, 52, 92, 73, 1, 93, 47, 5), 25, 50)
+
+        //implementationTest { create().subSet(0, 0) }
+        //assertEquals(
+        //    0, create().subSet(0, 0).size,
+        //    "The subset with the same lower and upper bounds is not empty."
+        //)
         val random = Random()
         for (iteration in 1..100) {
             val controlSet = mutableSetOf<Int>()

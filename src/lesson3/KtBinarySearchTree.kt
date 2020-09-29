@@ -1,5 +1,6 @@
 package lesson3
 
+import java.lang.IllegalArgumentException
 import java.lang.IllegalStateException
 import java.util.*
 import kotlin.NoSuchElementException
@@ -158,15 +159,28 @@ class KtBinarySearchTree<T : Comparable<T>> : AbstractMutableSet<T>(), Checkable
          * Средняя
          */
 
-        override fun hasNext(): Boolean {
-            return minNode != null
-        }
+        /*
+        override fun hasNext(): Boolean =
+            minNode != null
 
         private var minNode = root?.let { findMin(it) }
         private var prevMinNode: Node<T>? = null
+        private var highestMinNode: Node<T>? = null
 
-        private fun findMin(start: Node<T>): Node<T> {
-            return start.left?.let { findMin(start.left!!) } ?: start
+        private fun findMin(start: Node<T>): Node<T> =
+            start.left?.let { findMin(start.left!!) } ?: start
+         */
+
+        override fun next(): T {
+            TODO("Not yet implemented")
+        }
+
+        override fun remove() {
+            TODO("Not yet implemented")
+        }
+
+        override fun hasNext(): Boolean {
+            TODO("Not yet implemented")
         }
 
         /**
@@ -183,21 +197,33 @@ class KtBinarySearchTree<T : Comparable<T>> : AbstractMutableSet<T>(), Checkable
          * Средняя
          */
 
+        /*
+
         // Время - O(Log(N)) при равномерном распределении или O(N) при распределении в виде списка
         override fun next(): T {
-            if (root == null || minNode == null) throw IllegalStateException()
+            if (root == null || minNode == null) {
+                throw IllegalStateException()
+            }
             prevMinNode = minNode
+
+            minIsDefined = false
             minNode?.let { setNewMin(root!!) }
+
             if (prevMinNode == null) throw IllegalStateException()
             return prevMinNode!!.value
         }
 
+        private val set = TreeSet<Node<T>>()
+        private var minIsDefined = true
+
         private fun setNewMin(start: Node<T>) {
             when {
-                start.value.compareTo(minNode!!.value) > 0 -> minNode = start
-                start.left != null -> setNewMin(start.left!!)
-                start.right != null -> setNewMin(start.right!!)
-                else -> minNode = null
+                minNode!!.value.compareTo(start.value) > 0 -> if (!minIsDefined) setNewMin(start.right!!)
+                minNode!!.value.compareTo(start.value) < 0 -> if (!minIsDefined) setNewMin(start.left!!)
+                else -> {
+                    set.add(start)
+
+                }
             }
         }
 
@@ -218,6 +244,7 @@ class KtBinarySearchTree<T : Comparable<T>> : AbstractMutableSet<T>(), Checkable
         override fun remove() {
             if (prevMinNode == null || !remove(prevMinNode!!.value)) throw IllegalStateException()
         }
+         */
     }
 
     /**
@@ -237,8 +264,106 @@ class KtBinarySearchTree<T : Comparable<T>> : AbstractMutableSet<T>(), Checkable
      * Очень сложная (в том случае, если спецификация реализуется в полном объёме)
      */
     override fun subSet(fromElement: T, toElement: T): SortedSet<T> {
-        TODO()
+        TODO() //return SubSetKtBinarySearchTree(fromElement, toElement)
     }
+
+    /*
+
+    private inner class SubSetKtBinarySearchTree(val fromElement: T, val toElement: T) : SortedSet<T> {
+        val set = sortedSetOf<T>()
+
+        init {
+            update()
+            val t = 0
+        }
+
+        private fun update() {
+            set.clear()
+            val iterator = this@KtBinarySearchTree.iterator()
+            while (iterator.hasNext()) {
+                val element = iterator.next()
+                println(element)
+                val moreOrEqual = element.compareTo(fromElement) >= 0
+                val less = element.compareTo(toElement) < 0
+                //if (!less) break
+                if (moreOrEqual) set.add(element)
+            }
+        }
+
+        override fun add(element: T): Boolean {
+            if (!this@KtBinarySearchTree.add(element)) return false
+            update()
+            return true
+        }
+
+        override fun addAll(elements: Collection<T>): Boolean {
+            TODO("Not yet implemented")
+        }
+
+        override fun clear() {
+            TODO("Not yet implemented")
+        }
+
+        override fun iterator(): MutableIterator<T> {
+            TODO("Not yet implemented")
+        }
+
+        override fun removeAll(elements: Collection<T>): Boolean {
+            TODO("Not yet implemented")
+        }
+
+        override fun contains(element: T): Boolean {
+            return set.contains(element)
+        }
+
+        override fun tailSet(fromElement: T): SortedSet<T> {
+            TODO("Not yet implemented")
+        }
+
+        override fun first(): T {
+            return set.first()
+        }
+
+        override fun headSet(toElement: T): SortedSet<T> {
+            TODO("Not yet implemented")
+        }
+
+        override fun subSet(fromElement: T, toElement: T): SortedSet<T> {
+            TODO("Not yet implemented")
+        }
+
+        override fun remove(element: T): Boolean {
+            if (element.compareTo(fromElement) < 0 || element.compareTo(toElement) >= 0) throw IllegalArgumentException()
+            if (!this@KtBinarySearchTree.remove(element) || !set.remove(element)) return false
+            update()
+            return true
+        }
+
+        override fun retainAll(elements: Collection<T>): Boolean {
+            TODO("Not yet implemented")
+        }
+
+        override val size: Int
+            get() = set.size
+
+        override fun containsAll(elements: Collection<T>): Boolean {
+            TODO("Not yet implemented")
+        }
+
+        override fun isEmpty(): Boolean {
+            return size == 0
+        }
+
+        override fun comparator(): Comparator<in T>? {
+            TODO("Not yet implemented")
+        }
+
+        override fun last(): T {
+            return set.last()
+        }
+
+    }
+    */
 
     /**
      * Подмножество всех элементов строго меньше заданного

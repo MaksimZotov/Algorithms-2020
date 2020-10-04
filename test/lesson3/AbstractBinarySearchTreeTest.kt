@@ -151,6 +151,7 @@ abstract class AbstractBinarySearchTreeTest {
     }
 
     protected fun doRemoveTest() {
+        doRemoveTest(mutableSetOf(5, 4, 6, 7), 7)
         doRemoveTest(mutableSetOf(5), 5)
         doRemoveTest(mutableSetOf(3, 42), 3)
         doRemoveTest(mutableSetOf(3, 0), 3)

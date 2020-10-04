@@ -84,27 +84,29 @@ class KtBinarySearchTree<T : Comparable<T>> : AbstractMutableSet<T>(), Checkable
      */
 
     // Время - O(Log(N)) при равномерном распределении или O(N) при распределении в виде списка
-    override fun remove(element: T): Boolean =
-        root?.let { remove(it, element) } ?: false
-
-    private fun remove(start: Node<T>, value: T): Boolean {
-        val comparison = value.compareTo(start.value)
-        return if (comparison != 0) {
-            val next = if (comparison < 0) start.left else start.right
-            when {
-                next == null -> false
-                value.compareTo(next.value) != 0 -> remove(next, value)
-                else -> remove(start, next, comparison > 0)
-            }
-        } else {
+    override fun remove(element: T): Boolean {
+        if (root == null) return false
+        val comparison = element.compareTo(root!!.value)
+        if (comparison == 0) {
             val auxiliary = root!!
             remove(auxiliary, auxiliary, true)
             root = auxiliary.right
-            true
+            return true
+        }
+        return findAndRemove(root!!, element, comparison > 0)
+    }
+
+    private fun findAndRemove(start: Node<T>, value: T, childIsRightOf: Boolean): Boolean {
+        val next = if (childIsRightOf) start.right else start.left
+        val comparison = next?.let { value.compareTo(it.value) } ?: return false
+        return when {
+            comparison != 0 -> findAndRemove(next, value, comparison > 0)
+            else -> remove(start, next, childIsRightOf)
         }
     }
 
     private fun remove(parent: Node<T>, child: Node<T>, childIsRightOf: Boolean): Boolean {
+        size--
         if (child.left == null || child.right == null) {
             val child = when {
                 child.left == null && child.right == null -> null
@@ -112,13 +114,11 @@ class KtBinarySearchTree<T : Comparable<T>> : AbstractMutableSet<T>(), Checkable
                 else -> child.left
             }
             if (childIsRightOf) parent.right = child else parent.left = child
-            size--
             return true
         }
         val min = if (child.right!!.left == null) {
             val res = child.right!!
             child.right = child.right!!.right
-            size--
             res
         } else {
             findMin(child.right!!)
@@ -129,16 +129,13 @@ class KtBinarySearchTree<T : Comparable<T>> : AbstractMutableSet<T>(), Checkable
         return true
     }
 
-    private fun findMin(start: Node<T>): Node<T> {
-        return if (start.left!!.left == null) {
+    private fun findMin(start: Node<T>): Node<T> =
+        if (start.left!!.left == null) {
             val res = start.left!!
             start.left = start.left!!.right
-            size--
             res
-        } else {
-            findMin(start.left!!)
-        }
-    }
+        } else findMin(start.left!!)
+
 
     override fun comparator(): Comparator<in T>? =
         null

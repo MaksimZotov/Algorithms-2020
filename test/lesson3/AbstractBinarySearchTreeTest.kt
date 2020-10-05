@@ -200,10 +200,8 @@ abstract class AbstractBinarySearchTreeTest {
         val binaryIter = binarySet.iterator()
         println("Checking if the iterator traverses the tree correctly...")
         while (controlIter.hasNext()) {
-            val t1 = controlIter.next()
-            val t2 = binaryIter.next()
             assertEquals(
-                t1, t2,
+                controlIter.next(), binaryIter.next(),
                 "BinarySearchTreeIterator doesn't traverse the tree correctly."
             )
         }

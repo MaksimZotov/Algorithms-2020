@@ -50,6 +50,13 @@ class KtBinarySearchTree<T : Comparable<T>> : AbstractMutableSet<T>(), Checkable
      *
      * Пример
      */
+
+    // Время - O(Log(N)) при равномерном распределении или O(N) при распределении в виде списка +
+    //         + O(f(x1)) + O(f(x2)) + ... + O(f(xm)), где
+    //         f(xi) - временная сложность функции update() у i-го subSet'а
+    // Память - O(f(x1)) + O(f(x2)) + ... + O(f(xm)), где
+    //         f(xi) - затраты по памяти у функции update() у i-го subSet'а
+    // m - количество "выпушенных" бинарным деревом подмножеств
     override fun add(element: T): Boolean {
         val closest = find(element)
         val comparison = if (closest == null) -1 else element.compareTo(closest.value)
@@ -69,6 +76,8 @@ class KtBinarySearchTree<T : Comparable<T>> : AbstractMutableSet<T>(), Checkable
             }
         }
         size++
+
+        // O(f(x1)) + O(f(x2)) + ... + O(f(xm))
         subSets.forEach { it.update() }
         return true
     }
@@ -237,9 +246,8 @@ class KtBinarySearchTree<T : Comparable<T>> : AbstractMutableSet<T>(), Checkable
      *
      * Очень сложная (в том случае, если спецификация реализуется в полном объёме)
      */
-    override fun subSet(fromElement: T, toElement: T): SortedSet<T> {
-        return SubSetKtBinarySearchTree(fromElement, toElement)
-    }
+    override fun subSet(fromElement: T, toElement: T): SortedSet<T> =
+        SubSetKtBinarySearchTree(fromElement, toElement)
 
     private inner class SubSetKtBinarySearchTree(val fromElement: T?, val toElement: T?) : SortedSet<T> {
         val queue: ArrayDeque<T> = ArrayDeque()
@@ -251,6 +259,8 @@ class KtBinarySearchTree<T : Comparable<T>> : AbstractMutableSet<T>(), Checkable
             subSets.add(this)
         }
 
+        // Время - O(N)   N - количество элементов в дереве
+        // Память - O(K)   K - количество элементов в дереве, лежащих в диапазоне [fromElement, toElement)
         fun update() {
             queue.clear()
             val iterator = this@KtBinarySearchTree.iterator()
@@ -263,16 +273,22 @@ class KtBinarySearchTree<T : Comparable<T>> : AbstractMutableSet<T>(), Checkable
             }
         }
 
+        // Время - O(f(add) + N)
+        // Память - O(f(add))
+        // f(add) - сложность функции add() класса KtBinarySearchTree
+        // N - количество элементов в данном подмножестве
         override fun add(element: T): Boolean {
-            if (
-                fromElement?.let { it > element } ?: false ||
-                toElement?.let { it <= element } ?: false
-            ) {
+            if (fromElement?.let { it > element } == true || toElement?.let { it <= element } == true) {
                 throw IllegalArgumentException()
             }
+
+            // O(f(add))
             if (!this@KtBinarySearchTree.add(element)) {
                 return false
             }
+
+            // Время - O(N)
+            // Память - увеличивается на 1 число элементов, лежащих в диапазоне [fromElement, toElement)
             update()
             return true
         }
@@ -301,6 +317,7 @@ class KtBinarySearchTree<T : Comparable<T>> : AbstractMutableSet<T>(), Checkable
             TODO("Not yet implemented")
         }
 
+        // Время - O(1)
         override fun first(): T {
             if (queue.isEmpty()) {
                 if (auxiliaryFirst == null) throw NoSuchElementException()
@@ -320,14 +337,21 @@ class KtBinarySearchTree<T : Comparable<T>> : AbstractMutableSet<T>(), Checkable
             TODO("Not yet implemented")
         }
 
+        // Время - O(Log(N) + O(1) + O(M)) в лучшем случае
+        //         O(2N + M) в худшем случае
+        // N - количество элементов в дереве
+        // M - количество элементов в данном подмножестве
         override fun remove(element: T): Boolean {
-            if (
-                fromElement?.let { it > element } ?: false ||
-                toElement?.let { it <= element } ?: false
-            ) {
+            if (fromElement?.let { it > element } == true || toElement?.let { it <= element } == true) {
                 throw IllegalArgumentException()
             }
+
+            // Время - O(Log(N) + O(1)) при равномерном распределении и удалении элемента, который на очереди к выходу
+            //         O(N + N) при распределении в виде списка и удалении элемента, который последним встал в очередь
             if (!this@KtBinarySearchTree.remove(element) || !queue.remove(element)) return false
+
+            // Время - O(M)
+            // Память - уменьшается на 1 число элементов, лежащих в диапазоне [fromElement, toElement)
             update()
             return true
         }
@@ -351,6 +375,7 @@ class KtBinarySearchTree<T : Comparable<T>> : AbstractMutableSet<T>(), Checkable
             TODO("Not yet implemented")
         }
 
+        // Время - O(1)
         override fun last(): T {
             if (queue.isEmpty()) {
                 if (auxiliaryLast == null) throw NoSuchElementException()
@@ -377,9 +402,9 @@ class KtBinarySearchTree<T : Comparable<T>> : AbstractMutableSet<T>(), Checkable
      *
      * Сложная
      */
-    override fun headSet(toElement: T): SortedSet<T> {
-        return SubSetKtBinarySearchTree(null, toElement)
-    }
+    override fun headSet(toElement: T): SortedSet<T> =
+        SubSetKtBinarySearchTree(null, toElement)
+
 
     /**
      * Подмножество всех элементов нестрого больше заданного
@@ -395,9 +420,8 @@ class KtBinarySearchTree<T : Comparable<T>> : AbstractMutableSet<T>(), Checkable
      *
      * Сложная
      */
-    override fun tailSet(fromElement: T): SortedSet<T> {
-        return SubSetKtBinarySearchTree(fromElement, null)
-    }
+    override fun tailSet(fromElement: T): SortedSet<T> =
+        SubSetKtBinarySearchTree(fromElement, null)
 
     override fun first(): T {
         var current: Node<T> = root ?: throw NoSuchElementException()

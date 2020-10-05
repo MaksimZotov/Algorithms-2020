@@ -151,9 +151,16 @@ fun optimizeBuyAndSell(inputName: String): Pair<Int, Int> {
  * Общий комментарий: решение из Википедии для этой задачи принимается,
  * но приветствуется попытка решить её самостоятельно.
  */
+
+// Время - O(N)
+// Память - O(1)
 fun josephTask(menNumber: Int, choiceInterval: Int): Int {
-    TODO()
+    var result = 1
+    val decrementedChoiceInterval = choiceInterval - 1
+    for (i in 2..menNumber) result = (result + decrementedChoiceInterval) % i + 1
+    return result
 }
+
 
 /**
  * Наибольшая общая подстрока.

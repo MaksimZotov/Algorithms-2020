@@ -343,11 +343,11 @@ abstract class AbstractBinarySearchTreeTest {
     protected fun doSubSetTest() {
         doSubSetTest(mutableSetOf(97, 55, 49, 56, 45, 8, 54, 6, 66, 99, 43, 41, 62, 7, 51, 89, 11, 98, 84, 52, 92, 73, 1, 93, 47, 5), 25, 50)
 
-        //implementationTest { create().subSet(0, 0) }
-        //assertEquals(
-        //    0, create().subSet(0, 0).size,
-        //    "The subset with the same lower and upper bounds is not empty."
-        //)
+        implementationTest { create().subSet(0, 0) }
+        assertEquals(
+            0, create().subSet(0, 0).size,
+            "The subset with the same lower and upper bounds is not empty."
+        )
         val random = Random()
         for (iteration in 1..100) {
             val controlSet = mutableSetOf<Int>()
@@ -446,7 +446,47 @@ abstract class AbstractBinarySearchTreeTest {
         }
     }
 
+    private fun doSubSetFirstAndLastTest(controlSet: SortedSet<Int>, fromElement: Int, toElement: Int) {
+        val binarySet = create()
+        controlSet.forEach { binarySet += it }
+        val controlSubSet = controlSet.subSet(fromElement, toElement)
+        val binarySubSet = binarySet.subSet(fromElement, toElement)
+        val expectedFirst = try {
+            controlSubSet.first()
+        } catch (e: NoSuchElementException) {
+            null
+        }
+        val expectedLast = try {
+            controlSubSet.last()
+        } catch (e: NoSuchElementException) {
+            null
+        }
+        println("Control set: $controlSet")
+        println("Control subset: $controlSubSet")
+        val actualFirst = try {
+            binarySubSet.first()
+        } catch (e: NoSuchElementException) {
+            null
+        }
+        val actualLast = try {
+            binarySubSet.last()
+        } catch (e: NoSuchElementException) {
+            null
+        }
+        assertEquals(
+            expectedFirst, actualFirst,
+            "The first element was determined incorrectly: was $actualFirst, should've been $expectedFirst."
+        )
+        assertEquals(
+            expectedLast, actualLast,
+            "The last element was determined incorrectly: was $actualLast, should've been $expectedLast."
+        )
+        println("First element: $actualFirst. Last element: $actualLast.")
+    }
+
     protected fun doSubSetFirstAndLastTest() {
+        doSubSetFirstAndLastTest(sortedSetOf(0, 3, 10, 14, 17, 18, 21, 24, 26, 27, 30, 35, 65, 76, 85, 90, 92, 94, 99), 65, 66)
+
         implementationTest { create().subSet(0, 0).first() }
         implementationTest { create().subSet(0, 0).last() }
         val edgeCaseSet = create()
@@ -466,47 +506,12 @@ abstract class AbstractBinarySearchTreeTest {
         val random = Random()
         for (iteration in 1..100) {
             val controlSet = sortedSetOf<Int>()
-            val binarySet = create()
             for (i in 1..20) {
-                val nextInt = random.nextInt(100)
-                controlSet += nextInt
-                binarySet += nextInt
+                controlSet += random.nextInt(100)
             }
             val fromElement = random.nextInt(50)
             val toElement = random.nextInt(50) + 50
-            val controlSubSet = controlSet.subSet(fromElement, toElement)
-            val expectedFirst = try {
-                controlSubSet.first()
-            } catch (e: NoSuchElementException) {
-                null
-            }
-            val expectedLast = try {
-                controlSubSet.last()
-            } catch (e: NoSuchElementException) {
-                null
-            }
-            println("Control set: $controlSet")
-            println("Control subset: $controlSubSet")
-            val subSet = binarySet.subSet(fromElement, toElement)
-            val actualFirst = try {
-                subSet.first()
-            } catch (e: NoSuchElementException) {
-                null
-            }
-            val actualLast = try {
-                subSet.last()
-            } catch (e: NoSuchElementException) {
-                null
-            }
-            assertEquals(
-                expectedFirst, actualFirst,
-                "The first element was determined incorrectly: was $actualFirst, should've been $expectedFirst."
-            )
-            assertEquals(
-                expectedLast, actualLast,
-                "The last element was determined incorrectly: was $actualLast, should've been $expectedLast."
-            )
-            println("First element: $actualFirst. Last element: $actualLast.")
+            doSubSetFirstAndLastTest(controlSet, fromElement, toElement)
         }
     }
 

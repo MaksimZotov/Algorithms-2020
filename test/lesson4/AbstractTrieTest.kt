@@ -98,7 +98,8 @@ abstract class AbstractTrieTest {
             val trieIter = trieSet.iterator()
             println("Checking if the iterator traverses the entire set...")
             while (trieIter.hasNext()) {
-                controlSet.remove(trieIter.next())
+                val test = trieIter.next()
+                controlSet.remove(test)
             }
             assertTrue(
                 controlSet.isEmpty(),
@@ -115,6 +116,9 @@ abstract class AbstractTrieTest {
         implementationTest { create().iterator().remove() }
         val random = Random()
         for (iteration in 1..100) {
+            //val controlSet = mutableSetOf("ehghaagf", "he", "hfgbdbeag", "dddgbd", "ch", "bcdcfgc", "ddaedfgdbfeca", "gfhcc", "eecec", "gbbdca", "ebfbhfbbaebbac", "efcfhhabc", "ceeebcaffd", "eaa", "bghh")
+            //val toRemove = "ebfbhfbbaebbac"
+
             val controlSet = mutableSetOf<String>()
             val removeIndex = random.nextInt(15) + 1
             var toRemove = ""

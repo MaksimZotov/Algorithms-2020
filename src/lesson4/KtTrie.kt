@@ -1,5 +1,10 @@
 package lesson4
 
+import java.lang.IllegalArgumentException
+import java.lang.StringBuilder
+import java.util.*
+import kotlin.collections.LinkedHashSet
+
 /**
  * Префиксное дерево для строк
  */
@@ -68,8 +73,38 @@ class KtTrie : AbstractMutableSet<String>(), MutableSet<String> {
      *
      * Сложная
      */
-    override fun iterator(): MutableIterator<String> {
-        TODO()
-    }
+    override fun iterator(): MutableIterator<String> =
+        IteratorKtTrie()
 
+    inner class IteratorKtTrie : MutableIterator<String> {
+        private val stack = Stack<String>()
+        private var currentWord: String? = null
+
+        init {
+            if (root.children.isNotEmpty()) {
+                findAllBranches(String(), root)
+            }
+        }
+
+        private fun findAllBranches(word: String, currentNode: Node) {
+            if (currentNode.children.isEmpty()) {
+                stack.push(if (word.last().toInt() == 0) word.substring(0, word.lastIndex) else word)
+            }
+            currentNode.children.forEach { findAllBranches(word + it.key, it.value) }
+        }
+
+        override fun hasNext(): Boolean =
+            stack.isNotEmpty()
+
+        override fun next(): String {
+            if (stack.isEmpty()) throw IllegalStateException()
+            currentWord = stack.pop()
+            return currentWord!!
+        }
+
+        override fun remove() {
+            if (stack.isEmpty() || currentWord == null || !this@KtTrie.remove(currentWord)) throw IllegalStateException()
+            currentWord = null
+        }
+    }
 }

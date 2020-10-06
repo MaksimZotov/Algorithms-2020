@@ -1,9 +1,6 @@
 package lesson4
 
-import java.lang.IllegalArgumentException
-import java.lang.StringBuilder
 import java.util.*
-import kotlin.collections.LinkedHashSet
 
 /**
  * Префиксное дерево для строк
@@ -80,30 +77,49 @@ class KtTrie : AbstractMutableSet<String>(), MutableSet<String> {
         private val stack = Stack<String>()
         private var currentWord: String? = null
 
+        // Время - O(N + M * L) в худшем случае
+        // Память - O(M * L) в худшем случае
+        // N - суммарное количество букв во всех словах, M - количество слов, L - максимальная длина слова
         init {
             if (root.children.isNotEmpty()) {
                 findAllBranches(String(), root)
             }
         }
 
+        // Время - O(N + M * L) в худшем случае
+        // Память - O(M * L) в худшем случае
+        // N - суммарное количество букв во всех словах, M - количество слов, L - максимальная длина слова
+        //
+        // В ходе рекурсивного обхода создаётся много мусора (word + it.key) но
+        // он мало времени находиться в зоне видимости, поэтому его не учитывал
         private fun findAllBranches(word: String, currentNode: Node) {
             if (currentNode.children.isEmpty()) {
-                stack.push(if (word.last().toInt() == 0) word.substring(0, word.lastIndex) else word)
+                val toPush = if (word.last().toInt() == 0) word.substring(0, word.lastIndex) else word
+
+                // O(L)
+                if (toPush !in this@KtTrie) return
+
+                stack.push(toPush)
             }
             currentNode.children.forEach { findAllBranches(word + it.key, it.value) }
         }
 
+        // Время - O(1)
         override fun hasNext(): Boolean =
             stack.isNotEmpty()
 
+        // Время - O(1)
+        // Память - уменьшается на единицу количество хранящихся в стеке элементов
         override fun next(): String {
             if (stack.isEmpty()) throw IllegalStateException()
             currentWord = stack.pop()
             return currentWord!!
         }
 
+        // Время - O(N)   N - длина currentWord
+        // Память - добавление данных в память не происходит
         override fun remove() {
-            if (stack.isEmpty() || currentWord == null || !this@KtTrie.remove(currentWord)) throw IllegalStateException()
+            if (currentWord == null || !this@KtTrie.remove(currentWord)) throw IllegalStateException()
             currentWord = null
         }
     }

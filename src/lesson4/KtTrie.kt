@@ -90,8 +90,8 @@ class KtTrie : AbstractMutableSet<String>(), MutableSet<String> {
         // Память - O(M * L) в худшем случае
         // N - суммарное количество букв во всех словах, M - количество слов, L - максимальная длина слова
         //
-        // В ходе рекурсивного обхода создаётся много мусора (word + it.key) но
-        // он мало времени находиться в зоне видимости, поэтому его не учитывал
+        // В ходе рекурсивного обхода создаётся много мусора (word + it.key), но
+        // он мало времени находится в зоне видимости, поэтому его не учитывал
         private fun findAllBranches(word: String, currentNode: Node) {
             if (currentNode.children.isEmpty()) {
                 val toPush = if (word.last().toInt() == 0) word.substring(0, word.lastIndex) else word

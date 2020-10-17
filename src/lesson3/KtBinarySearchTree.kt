@@ -97,15 +97,15 @@ class KtBinarySearchTree<T : Comparable<T>> : AbstractMutableSet<T>(), Checkable
 
     // Время - O(Log(N)) при равномерном распределении или O(N) при распределении в виде списка
     override fun remove(element: T): Boolean {
-        if (root == null) return false
-        val comparison = element.compareTo(root!!.value)
+        val root = root ?: return false
+        val comparison = element.compareTo(root.value)
         if (comparison == 0) {
-            val auxiliary = root!!
+            val auxiliary = root
             remove(auxiliary, auxiliary, true)
-            root = auxiliary.right
+            this.root = auxiliary.right
             return true
         }
-        return findAndRemove(root!!, element, comparison > 0)
+        return findAndRemove(root, element, comparison > 0)
     }
 
     private fun findAndRemove(start: Node<T>, value: T, childIsRightOf: Boolean): Boolean {
@@ -128,12 +128,12 @@ class KtBinarySearchTree<T : Comparable<T>> : AbstractMutableSet<T>(), Checkable
             if (childIsRightOf) parent.right = child else parent.left = child
             return true
         }
-        val min = if (child.right!!.left == null) {
-            val res = child.right!!
-            child.right = child.right!!.right
-            res
+        val childRight = child.right ?: return false
+        val min = if (childRight.left == null) {
+            child.right = childRight.right
+            childRight
         } else {
-            findMin(child.right!!)
+            findMin(childRight)
         }
         min.left = child.left
         min.right = child.right
@@ -141,12 +141,13 @@ class KtBinarySearchTree<T : Comparable<T>> : AbstractMutableSet<T>(), Checkable
         return true
     }
 
-    private fun findMin(start: Node<T>): Node<T> =
-        if (start.left!!.left == null) {
-            val res = start.left!!
-            start.left = start.left!!.right
-            res
-        } else findMin(start.left!!)
+    private fun findMin(start: Node<T>): Node<T> {
+        val left = start.left ?: throw IllegalArgumentException("start.left must not be equal to null")
+        return if (left.left == null) {
+            start.left = left.right
+            left
+        } else findMin(left)
+    }
 
 
     override fun comparator(): Comparator<in T>? =

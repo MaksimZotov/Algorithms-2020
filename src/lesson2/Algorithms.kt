@@ -32,6 +32,18 @@ import kotlin.math.sqrt
 
 // Время - O(N * K)   K - переменная, меняющаяся в ходе работы программы и зависящая от содержимого входной последовательности
 // Память - O(N)
+//
+// K <= N/2 + 1
+// Пример худшего варианта входных данных (buysell_custom_in4.txt): 10, 11, 9, 10, 8, 9, 7, 8, 6, 7, 5, 6, 4, 5, 3, 4, 2, 3, 1, 2
+// В этом случае K на каждой второй итерации увеличивается на 1, и на последней итерации K = 11.
+// Получается, что в худшем случае затраты по времени: O(N * N/2) = O(N^2) - особого выигрыша с решением в лоб нет.
+// Да, в худшем случае это так, однако есть и другой пример:
+//
+// buysell_custom_in5.txt - файл с количеством строк (цен) N = 1000. Цены сгенерированы случайным образом.
+// В данном случае максимальное значение, которое в ходе выполнения программы принимает K, равно 5.
+// Таким образом, временная сложность: O(N * 5) = O(N)
+//
+// Все тексты лежат в: корневая папка проекта/texts
 fun optimizeBuyAndSell(inputName: String): Pair<Int, Int> {
     // список <Пара<Цена покупки, Дата покупки>, <Цена продажи, Дата продажи>>
     val list = mutableListOf<Pair<Pair<Int, Int>, Pair<Int, Int>>>()
@@ -176,6 +188,12 @@ fun josephTask(menNumber: Int, choiceInterval: Int): Int {
 
 // Время - O(N * (N + K))   K - переменная, меняющаяся в ходе работы программы (K <= N)
 // Память - O(<= N)
+//
+// Доказать, что это решение не явлется наивным, можно на примере:
+// Есть готовый тест с двумя текстами: ruslan_ludmila_1.txt и ruslan_ludmila_2.txt
+// В первом 7к символов, во втором 6к, однако максимальное значение, которое принимает K, равно 928 ~ 1к
+// Примем за N = 6000, тогда временная сложность в данном случае: O(N * (N + K) = O(N * (N + N/6) = O(N^2)
+// При решении в лоб сложность по времени была бы O(N^3)
 fun longestCommonSubstring(first: String, second: String): String {
     // Лист пар <Начальный индекс подстроки в second, Длина подстроки>
     val list = mutableListOf<Pair<Int, Int>>()
@@ -184,39 +202,39 @@ fun longestCommonSubstring(first: String, second: String): String {
     // O(N)
     for (i in first.indices) {
         // O(N)
-        for (j in second.indices)
+        for (j in second.indices) {
             if (first[i] == second[j]) {
                 list.add(j to 1)
                 if (result.second < 0)
                     result = list.last()
             }
-
+        }
         val iterator = list.iterator()
         if (iterator.hasNext()) {
-            var indexes = iterator.next()
+            var startIndexAndLength = iterator.next()
 
             // O(K)
             while (true) {
-                if (indexes.second > result.second) {
-                    result = indexes
+                if (startIndexAndLength.second > result.second) {
+                    result = startIndexAndLength
                 }
-                if (i + indexes.second > first.lastIndex || indexes.first + indexes.second > second.lastIndex) {
+                if (i + startIndexAndLength.second > first.lastIndex || startIndexAndLength.first + startIndexAndLength.second > second.lastIndex) {
                     iterator.remove()
                     if (iterator.hasNext()) {
-                        indexes = iterator.next()
+                        startIndexAndLength = iterator.next()
                         continue
                     } else
                         break
                 }
-                if (first[i + indexes.second] == second[indexes.first + indexes.second]) {
-                    indexes = indexes.first to indexes.second + 1
+                if (first[i + startIndexAndLength.second] == second[startIndexAndLength.first + startIndexAndLength.second]) {
+                    startIndexAndLength = startIndexAndLength.first to startIndexAndLength.second + 1
                 } else {
-                    if (indexes.second > result.second) {
-                        result = indexes
+                    if (startIndexAndLength.second > result.second) {
+                        result = startIndexAndLength
                     }
                     iterator.remove()
                     if (iterator.hasNext()) {
-                        indexes = iterator.next()
+                        startIndexAndLength = iterator.next()
                         continue
                     } else
                         break

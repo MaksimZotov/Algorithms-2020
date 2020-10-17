@@ -3,8 +3,6 @@
 package lesson1
 
 import java.io.File
-import java.lang.Integer.min
-import java.lang.StringBuilder
 import kotlin.String
 
 
@@ -88,45 +86,37 @@ fun sortTimes(inputName: String, outputName: String) {
 // Время - O(N*Log(N))
 // Память - O(N)
 fun sortAddresses(inputName: String, outputName: String) {
-    fun compare(name: String, otherName: String): Int {
-        for (i in 0 until min(name.length, otherName.length)) {
-            val result = name[i].toLowerCase() - otherName[i].toLowerCase()
-            if (result != 0) return result
-        }
-        return name.length - otherName.length
+    val comparator = Comparator<String> { address, otherAddress ->
+        val streetAndNumber = address.split(" ")
+        val street = streetAndNumber[0]
+        val number = streetAndNumber[1]
+
+        val otherStreetAndNumber = otherAddress.split(" ")
+        val otherStreet = otherStreetAndNumber[0]
+        val otherNumber = otherStreetAndNumber[1]
+
+        val result = street.compareTo(otherStreet)
+        return@Comparator if (result == 0) {
+            val dif = number.length - otherNumber.length
+            if (dif != 0) dif else number.compareTo(otherNumber)
+        } else result
     }
-
-    class Name(val name: String) : Comparable<Name> {
-        override operator fun compareTo(other: Name): Int = compare(name, other.name)
-    }
-
-    class Address(val name: String, val listOfNames: MutableList<Name>) : Comparable<Address> {
-        val street = name.split(" ")[0]
-        val number = name.split(" ")[1].toInt()
-
-        override operator fun compareTo(other: Address): Int {
-            val result = compare(street, other.street)
-            return if (result == 0) number - other.number else result
-        }
-
-        override fun toString(): String {
-            val stringBuilder = StringBuilder("$name - ")
-            listOfNames.forEachIndexed { index, it -> if (index != listOfNames.lastIndex) stringBuilder.append("${it.name}, ") else stringBuilder.append(it.name) }
-            return stringBuilder.toString()
-        }
-    }
-
-    val resultList = mutableListOf<Address>()
+    val addressAndNames = sortedMapOf<String, MutableList<String>>(comparator)
     File(inputName).forEachLine { line ->
         require(line.matches(Regex("[a-zA-Zа-яА-Я-ёЁ]+ [a-zA-Zа-яА-Я-ёЁ]+ - [a-zA-Zа-яА-Я-ёЁ]+ \\d+")))
         val nameAndAddress = line.split(" - ")
-        val index = resultList.indexOfFirst { it.name == nameAndAddress[1] }
-        if (index >= 0) resultList[index].listOfNames.add(Name(nameAndAddress[0]))
-        else resultList.add(Address(line.split(" - ")[1], mutableListOf(Name(nameAndAddress[0]))))
+        val name = nameAndAddress[0]
+        val address = nameAndAddress[1]
+        addressAndNames.getOrPut(address) { mutableListOf() }.add(name)
     }
-
-    for (item in resultList) item.listOfNames.sort()
-    File(outputName).bufferedWriter().use { writer -> resultList.sorted().forEach { writer.write("${it}\n") } }
+    File(outputName).bufferedWriter().use { writer ->
+        addressAndNames.forEach {
+            writer.write("${it.key} - ")
+            val sortedNames = it.value.sorted()
+            sortedNames.forEachIndexed { i, s -> if (i == sortedNames.lastIndex) writer.write(s) else writer.write("$s, ") }
+            writer.newLine()
+        }
+    }
 }
 
 /**
@@ -225,7 +215,7 @@ fun sortSequence(inputName: String, outputName: String) {
             else arrayOfCounters[i - min]?.plus(1)
     }
 
-    var listOfCounters = mutableListOf<Pair<Int, Int>>()
+    val listOfCounters = mutableListOf<Pair<Int, Int>>()
 
     // O(max - min) - здесь могут быть наибольшие просадки (Если диапазон значений мал (max - min <= N), то алгоритм показывает O(N))
     for (i in arrayOfCounters.indices)

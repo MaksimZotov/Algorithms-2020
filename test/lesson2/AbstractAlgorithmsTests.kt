@@ -46,6 +46,8 @@ abstract class AbstractAlgorithmsTests {
         assertEquals(1 to 1, optimizeBuyAndSell("texts/buysell_custom_in1.txt"))
         assertEquals(3 to 6, optimizeBuyAndSell("texts/buysell_custom_in2.txt"))
         assertEquals(8 to 10, optimizeBuyAndSell("texts/buysell_custom_in3.txt"))
+        assertEquals(1 to 2, optimizeBuyAndSell("texts/buysell_custom_in4.txt"))
+        assertEquals(500 to 1000, optimizeBuyAndSell("texts/buysell_custom_in5.txt"))
 
         assertEquals(3 to 4, optimizeBuyAndSell("input/buysell_in1.txt"))
         assertEquals(8 to 12, optimizeBuyAndSell("input/buysell_in2.txt"))

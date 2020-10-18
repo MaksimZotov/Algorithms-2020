@@ -156,7 +156,7 @@ fun sortTemperatures(inputName: String, outputName: String) {
     val array = Array<Pair<Int, String?>>(7731) { 0 to null }
     File(inputName).forEachLine { line ->
         val i = line.replace(".", "").toInt() + 2730
-        array[i] = array[i].first + 1 to if (array[i].second == null) line else array[i].second
+        array[i] = array[i].first + 1 to line
     }
     File(outputName).bufferedWriter().use { writer -> array.forEach { for (i in 1..it.first) writer.write("${it.second}\n") } }
 }
@@ -191,63 +191,44 @@ fun sortTemperatures(inputName: String, outputName: String) {
  * 2
  */
 
-// Время - O(N + K)   K - разность между макс. и мин. цифрой
+// Время - O(N)
 // Память - O(N)
 fun sortSequence(inputName: String, outputName: String) {
     val sourceList = mutableListOf<Int>()
     var max = Int.MIN_VALUE
-    var min = Int.MAX_VALUE
 
+    val map = hashMapOf<Int, Int>()
     // O(N)
     File(inputName).forEachLine { line ->
-        val intLine = line.toInt()
-        if (intLine > max) max = intLine
-        if (intLine < min) min = intLine
-        sourceList.add(intLine)
+        val key = line.toInt()
+        // O(1) - так как hashMap
+        val value = map[key]
+        if (value != null) {
+            val newValue = value + 1
+            // O(1)
+            map[key] = newValue
+            if (newValue > max)
+                max = newValue
+            // O(1)
+        } else map[key] = 1
+        // O(1)
+        sourceList.add(key)
     }
-
-    val arrayOfCounters = Array<Int?>(max - min + 1) { null }
-
-    // O(N)
-    for (i in sourceList) {
-        arrayOfCounters[i - min] =
-            if (arrayOfCounters[i - min] == null) 1
-            else arrayOfCounters[i - min]?.plus(1)
-    }
-
-    val listOfCounters = mutableListOf<Pair<Int, Int>>()
-
-    // O(max - min) - здесь могут быть наибольшие просадки (Если диапазон значений мал (max - min <= N), то алгоритм показывает O(N))
-    for (i in arrayOfCounters.indices)
-        if (arrayOfCounters[i] != null)
-            listOfCounters.add(i to arrayOfCounters[i]!!)
-
-    var maxCount = 0
-    var targetIndex = 0
 
     // O(<= N)
-    for (i in listOfCounters.indices) {
-        if (maxCount < listOfCounters[i].second) {
-            targetIndex = listOfCounters[i].first
-            maxCount = listOfCounters[i].second
-        }
-    }
-    val targetNumber = targetIndex + min
-    var index = 0
+    val updatedMap = map.filter { it.value == max }
+    // O(<= N)
+    val result = (updatedMap.minByOrNull { it.key } ?: return).key
 
     File(outputName).bufferedWriter().use { writer ->
+        var count = 0
         // O(N)
-        for (item in sourceList) {
-            if (item != targetNumber) {
-                writer.write("$item\n")
-                index++
-            }
+        sourceList.forEach {
+            if (it == result) count++
+            else writer.write("$it\n")
         }
-
-        // O(<= N)
-        for (i in index until sourceList.size) {
-            writer.write("$targetNumber\n")
-        }
+        for (i in 1..count)
+            writer.write("$result\n")
     }
 }
 

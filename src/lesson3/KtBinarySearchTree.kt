@@ -156,19 +156,22 @@ class KtBinarySearchTree<T : Comparable<T>> : AbstractMutableSet<T>(), Checkable
     override fun iterator(): MutableIterator<T> =
         BinarySearchTreeIterator()
 
-    // Взял решение отсюда: https://medium.com/algorithm-problems/binary-search-tree-iterator-19615ec585a
+    // Частично взял решение отсюда: https://medium.com/algorithm-problems/binary-search-tree-iterator-19615ec585a
     inner class BinarySearchTreeIterator internal constructor() : MutableIterator<T> {
-        private var stack: Stack<Node<T>> = Stack<Node<T>>()
+        private val initialSize = size
+        private var countIter = 0
+        private var stack = Stack<Pair<Node<T>, Node<T>?>>()
         private var currentNode: Node<T>? = null
+        private var parentOfCurrentNode: Node<T>? = null
 
         init {
-            pushToLeft(root)
+            pushToLeft(root, null)
         }
 
-        private fun pushToLeft(node: Node<T>?) {
+        private fun pushToLeft(node: Node<T>?, parent: Node<T>?) {
             if (node != null) {
-                stack.push(node)
-                pushToLeft(node.left)
+                stack.push(node to parent)
+                pushToLeft(node.left, node)
             }
         }
 
@@ -185,7 +188,7 @@ class KtBinarySearchTree<T : Comparable<T>> : AbstractMutableSet<T>(), Checkable
 
         // Время - O(1)
         override fun hasNext(): Boolean =
-            stack.isNotEmpty()
+            countIter < initialSize
 
         /**
          * Получение следующего элемента
@@ -204,9 +207,16 @@ class KtBinarySearchTree<T : Comparable<T>> : AbstractMutableSet<T>(), Checkable
         // Время - O(Log(N))
         // Память - O(Log(N))
         override fun next(): T {
-            if (stack.isEmpty()) throw IllegalStateException()
-            currentNode = stack.pop()
-            pushToLeft(currentNode!!.right)
+            countIter++
+            if (stack.isEmpty())
+                throw IllegalStateException()
+
+            val nodeAndParent = stack.pop()
+
+            currentNode = nodeAndParent.first
+            parentOfCurrentNode = nodeAndParent.second
+
+            pushToLeft(currentNode!!.right, currentNode)
             return currentNode!!.value
         }
 
@@ -223,11 +233,18 @@ class KtBinarySearchTree<T : Comparable<T>> : AbstractMutableSet<T>(), Checkable
          * Сложная
          */
 
-        // Время - O(Log(N)) при равномерном распределении или O(N) при распределении в виде списка
+        // Время: либо O(Log(N)), либо O(N), либо O(1), либо O(L), где L - длина левой ветки у правого соседа текущего узла
         override fun remove() {
-            if (currentNode == null) throw IllegalStateException()
-            remove(currentNode!!.value)
-            currentNode = null
+            val currentNode = currentNode ?: throw IllegalStateException()
+            if (parentOfCurrentNode == null) {
+                // O(Log(N)) при равномерном распределении или O(N) при распределении в виде списка
+                remove(currentNode.value)
+            } else {
+                val parent = parentOfCurrentNode ?: return
+                // // O(L) - при наличии обоих потомков, O(1) - в других случаях
+                remove(parent, currentNode, currentNode == parent.right)
+            }
+            this.currentNode = null
         }
     }
 

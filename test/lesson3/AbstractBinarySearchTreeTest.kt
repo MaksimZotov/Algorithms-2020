@@ -229,14 +229,18 @@ abstract class AbstractBinarySearchTreeTest {
         }
     }
 
-    private fun doIteratorRemoveTest(controlSet: TreeSet<Int>, toRemove: Int) {
+    private fun doIteratorRemoveTest(controlSet: MutableSet<Int>, toRemove: Int) {
+        val sortedControlSet = controlSet.sorted().toMutableSet()
         println("Initial set: $controlSet")
+        println("Sorted initial set: $sortedControlSet")
         val binarySet = create()
         for (element in controlSet) {
             binarySet += element
         }
         controlSet.remove(toRemove)
+        sortedControlSet.remove(toRemove)
         println("Control set: $controlSet")
+        println("Sorted control set: $sortedControlSet")
         println("Removing element $toRemove from the tree through the iterator...")
         val iterator = binarySet.iterator()
         assertFailsWith<IllegalStateException>("Something was supposedly removed before the iteration started") {
@@ -283,13 +287,17 @@ abstract class AbstractBinarySearchTreeTest {
     }
 
     protected fun doIteratorRemoveTest() {
+        doIteratorRemoveTest(mutableSetOf(91, 54, 31, 24, 63, 80, 66, 45, 25, 95, 43, 14, 73, 12, 42, 33, 5), 54)
+        doIteratorRemoveTest(mutableSetOf(80, 60, 41, 81), 41)
+        doIteratorRemoveTest(mutableSetOf(24, 55, 81, 60, 99, 2, 96, 85, 21, 31, 56, 75, 79, 87, 78, 36, 46, 72), 24)
+        doIteratorRemoveTest(mutableSetOf(5, 4, 6, 3, 7, 2, 8, 1, 9, 0, 10), 8)
         doIteratorRemoveTest(TreeSet(listOf(0, 2, 3)), 5)
         doIteratorRemoveTest(TreeSet(listOf()), 0)
 
         implementationTest { create().iterator().remove() }
         val random = Random()
         for (iteration in 1..100) {
-            val controlSet = TreeSet<Int>()
+            val controlSet = mutableSetOf<Int>()
             val removeIndex = random.nextInt(20) + 1
             var toRemove = 0
             for (i in 1..20) {

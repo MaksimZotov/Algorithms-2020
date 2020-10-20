@@ -83,15 +83,27 @@ abstract class AbstractAlgorithmsTests {
     }
 
     fun longestCommonSubstring(longestCommonSubstring: (String, String) -> String) {
-        assertEquals("", longestCommonSubstring("аааа", "АААА"))
-        assertEquals("д", longestCommonSubstring("абвд", "дгеё"))
-        assertEquals("абвгд", longestCommonSubstring("абвгд", "абвгд"))
-        assertEquals("бра", longestCommonSubstring("крякозябра", "чупокабра"))
-        assertEquals("кпарамр", longestCommonSubstring("мвпарапвпукпарамрурцпарау", "мупарамумпаралллллкпарамрру43"))
-
-        assertEquals("", longestCommonSubstring("мой мир", "я"))
-        assertEquals("зд", longestCommonSubstring("здравствуй мир", "мы здесь"))
-        assertEquals("СЕРВАТОР", longestCommonSubstring("ОБСЕРВАТОРИЯ", "КОНСЕРВАТОРЫ"))
+        assertEquals(
+            File("texts/substring_custom_1_result.txt").readText().trim(),
+            longestCommonSubstring(
+                File("texts/substring_custom_1_1.txt").readText(),
+                File("texts/substring_custom_1_2.txt").readText(),
+            ).trim()
+        )
+        assertEquals(
+            File("texts/substring_custom_2_result.txt").readText().trim(),
+            longestCommonSubstring(
+                File("texts/substring_custom_2_1.txt").readText(),
+                File("texts/substring_custom_2_2.txt").readText(),
+            ).trim()
+        )
+        assertEquals(
+            File("texts/substring_custom_3_result.txt").readText().trim(),
+            longestCommonSubstring(
+                File("texts/substring_custom_3_1.txt").readText(),
+                File("texts/substring_custom_3_2.txt").readText(),
+            ).trim()
+        )
         assertEquals(
             "огда ", longestCommonSubstring(
                 """
@@ -135,6 +147,14 @@ abstract class AbstractAlgorithmsTests {
                 File("input/ruslan_ludmila_2.txt").readText()
             ).trim()
         )
+        assertEquals("", longestCommonSubstring("аааа", "АААА"))
+        assertEquals("д", longestCommonSubstring("абвд", "дгеё"))
+        assertEquals("абвгд", longestCommonSubstring("абвгд", "абвгд"))
+        assertEquals("бра", longestCommonSubstring("крякозябра", "чупокабра"))
+        assertEquals("кпарамр", longestCommonSubstring("мвпарапвпукпарамрурцпарау", "мупарамумпаралллллкпарамрру43"))
+        assertEquals("", longestCommonSubstring("мой мир", "я"))
+        assertEquals("зд", longestCommonSubstring("здравствуй мир", "мы здесь"))
+        assertEquals("СЕРВАТОР", longestCommonSubstring("ОБСЕРВАТОРИЯ", "КОНСЕРВАТОРЫ"))
     }
 
     fun calcPrimesNumber(calcPrimesNumber: (Int) -> Int) {

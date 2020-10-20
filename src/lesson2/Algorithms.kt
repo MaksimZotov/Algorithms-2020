@@ -3,7 +3,9 @@
 package lesson2
 
 import java.io.File
+import java.lang.Exception
 import kotlin.math.sqrt
+import kotlin.system.measureTimeMillis
 
 /**
  * Получение наибольшей прибыли (она же -- поиск максимального подмассива)
@@ -188,71 +190,279 @@ fun josephTask(menNumber: Int, choiceInterval: Int): Int {
  * вернуть ту из них, которая встречается раньше в строке first.
  */
 
-// Время - O(N * (N + K))   K - переменная, меняющаяся в ходе работы программы (K <= (1 + N)/2 * N)
-// Память - O(<= N)
+// Время - O(N * M * K)   K <= M
+// Память - O(1)
 //
-// Доказать, что это решение не явлется наивным, можно на примере:
-// Есть готовый тест с двумя текстами: ruslan_ludmila_1.txt и ruslan_ludmila_2.txt
-// На решение этого теста на моём ноутбуке тратится меньше секунды,
-// в то время как при лобовом решении я не могу даже дождаться окончания исполнения программы.
-// Кроме того, эталонное решение с двумерным массивом тратит на этот тест всего лишь в 2 раза меньше времени по сравнению с данным, но
-// зато здесь задействуется меньше памяти.
+// Трудно придумать худший вариант. При first = second на i = 0 и j = 0 итерации K достигнет M, однако из-за проверки
+// "if (second.length - j <= result.second) break" после этого мы никогда вновь в цикл while не попадём, так как
+// second.length станет равен result.second.
 //
-// В худшем варианте, когда first полностью равен second, макс. значение K = (1 + N)/2 * N
-// Однако даже в таком случае K достигает (1 + N)/2 * N лишь на первой итерации основного цикла. На каждой последующей итерации
-// K будет иметь меньшее значение по сравнению со значением на предыдущей итерации.
-// Например, при first = second и N = 5 K будет меняться следующим образом: 15 -> 14 -> 12 -> 9 -> 5
-// То есть мы имеем следующую динамику изменения K в худшем случае: Kmax -> Kmax - 1 -> (Kmax - 1) - 2 -> ((Kmax - 1) - 2) - 3 -> ...
+// В то же время, чем меньше размеры совпадающих последовательностий символов из first и second, тем меньше значение K
+// в силу наличия в while условия "first[i + length] == second[j + length]"
+//
+// Из-за такой "неопределенности" я написал функцию testLongestCommonSubstring(), расположенную чуть ниже и
+// сравнивающую время работы и количество общих итераций между моим решением и стандартным (под таковым я имею в виду
+// решение с двумерным массивом - тут этот массив оптимизирован по памяти: O(M) вместо O(N * M)).
+//
+// В ходе сравнения обнаружилось, что данный алгоритм имеет асимптотику, сильно схожую на асимптотику у стандартного алгоритма.
+// Результаты тестирования приведены снизу, а под ними расположена сама testLongestCommonSubstring()
+//
+// По результатам видно, что иногда данное решение выигрывает по числу итераций у стандартного, но при этом проигрывает
+// по времени - предполагаю, причина кроется в наличии арифметичекских вычислений в моей реализации.
 fun longestCommonSubstring(first: String, second: String): String {
-    // Лист пар <Начальный индекс подстроки в second, Длина подстроки>
-    val list = mutableListOf<Pair<Int, Int>>()
     var result = -1 to -1
-
     // O(N)
     for (i in first.indices) {
-        // O(N)
+        if (first.length - i <= result.second) break
+        // O(M)
         for (j in second.indices) {
+            if (second.length - j <= result.second) break
             if (first[i] == second[j]) {
-                list.add(j to 1)
-                if (result.second < 0)
-                    result = list.last()
-            }
-        }
-        val iterator = list.iterator()
-        if (iterator.hasNext()) {
-            var startIndexAndLength = iterator.next()
-
-            // O(K)
-            while (true) {
-                if (startIndexAndLength.second > result.second) {
-                    result = startIndexAndLength
-                }
-                if (i + startIndexAndLength.second > first.lastIndex || startIndexAndLength.first + startIndexAndLength.second > second.lastIndex) {
-                    iterator.remove()
-                    if (iterator.hasNext()) {
-                        startIndexAndLength = iterator.next()
-                        continue
-                    } else
-                        break
-                }
-                if (first[i + startIndexAndLength.second] == second[startIndexAndLength.first + startIndexAndLength.second]) {
-                    startIndexAndLength = startIndexAndLength.first to startIndexAndLength.second + 1
-                } else {
-                    if (startIndexAndLength.second > result.second) {
-                        result = startIndexAndLength
-                    }
-                    iterator.remove()
-                    if (iterator.hasNext()) {
-                        startIndexAndLength = iterator.next()
-                        continue
-                    } else
-                        break
-                }
+                var length = 1
+                // O(K)
+                while (i + length < first.length && j + length < second.length && first[i + length] == second[j + length]) length++
+                if (length > result.second) result = j to length
             }
         }
     }
-    if (result.first < 0) return ""
-    return second.substring(result.first, result.first + result.second)
+    return if (result.first < 0) "" else second.substring(result.first, result.first + result.second)
+}
+
+// Результаты testLongestCommonSubstring()
+// Count - количество итераций
+// Time - время выполнения
+/*
+    Length of the first word: 20768
+    Length of the second word: 22680
+       The standard solution:
+           Count = 471018240
+           Time = 2061
+       The custom solution:
+           Count = 411495309
+           Time = 2357
+    CountCustom / CountStandard = 0.8736292441668501
+    TimeCustom / TimeStandard = 1.143619602134886
+    Substring length = 2734
+
+    Length of the first word: 26607
+    Length of the second word: 27206
+       The standard solution:
+           Count = 723870042
+           Time = 3207
+       The custom solution:
+           Count = 730500974
+           Time = 3367
+    CountCustom / CountStandard = 1.0091603901463848
+    TimeCustom / TimeStandard = 1.0498908637355784
+    Substring length = 159
+
+    Length of the first word: 53903
+    Length of the second word: 23002
+       The standard solution:
+           Count = 1239876806
+           Time = 5259
+       The custom solution:
+           Count = 925581272
+           Time = 4992
+    CountCustom / CountStandard = 0.7465106755130316
+    TimeCustom / TimeStandard = 0.9492298916143753
+    Substring length = 7198
+
+    Length of the first word: 369
+    Length of the second word: 363
+       The standard solution:
+           Count = 133947
+           Time = 6
+       The custom solution:
+           Count = 131404
+           Time = 1
+    CountCustom / CountStandard = 0.9810148790193136
+    TimeCustom / TimeStandard = 0.16666666666666666
+    Substring length = 5
+
+    Length of the first word: 7374
+    Length of the second word: 6520
+       The standard solution:
+           Count = 48078480
+           Time = 270
+       The custom solution:
+           Count = 47251461
+           Time = 200
+    CountCustom / CountStandard = 0.982798561851373
+    TimeCustom / TimeStandard = 0.7407407407407407
+    Substring length = 93
+
+    Length of the first word: 4
+    Length of the second word: 4
+       The standard solution:
+           Count = 16
+           Time = 0
+       The custom solution:
+           Count = 16
+           Time = 0
+    CountCustom / CountStandard = 1.0
+    TimeCustom / TimeStandard = NaN
+    Substring length = 0
+
+    Length of the first word: 4
+    Length of the second word: 4
+       The standard solution:
+           Count = 16
+           Time = 0
+       The custom solution:
+           Count = 16
+           Time = 0
+    CountCustom / CountStandard = 1.0
+    TimeCustom / TimeStandard = NaN
+    Substring length = 1
+
+    Length of the first word: 5
+    Length of the second word: 5
+       The standard solution:
+           Count = 25
+           Time = 1
+       The custom solution:
+           Count = 7
+           Time = 0
+    CountCustom / CountStandard = 0.28
+    TimeCustom / TimeStandard = 0.0
+    Substring length = 5
+
+    Length of the first word: 10
+    Length of the second word: 9
+       The standard solution:
+           Count = 90
+           Time = 0
+       The custom solution:
+           Count = 74
+           Time = 0
+    CountCustom / CountStandard = 0.8222222222222222
+    TimeCustom / TimeStandard = NaN
+    Substring length = 3
+
+    Length of the first word: 25
+    Length of the second word: 29
+       The standard solution:
+           Count = 725
+           Time = 0
+       The custom solution:
+           Count = 503
+           Time = 0
+    CountCustom / CountStandard = 0.6937931034482758
+    TimeCustom / TimeStandard = NaN
+    Substring length = 7
+
+    Length of the first word: 7
+    Length of the second word: 1
+       The standard solution:
+           Count = 7
+           Time = 0
+       The custom solution:
+           Count = 7
+           Time = 0
+    CountCustom / CountStandard = 1.0
+    TimeCustom / TimeStandard = NaN
+    Substring length = 0
+
+    Length of the first word: 14
+    Length of the second word: 8
+       The standard solution:
+           Count = 112
+           Time = 0
+       The custom solution:
+           Count = 86
+           Time = 0
+    CountCustom / CountStandard = 0.7678571428571429
+    TimeCustom / TimeStandard = NaN
+    Substring length = 2
+
+    Length of the first word: 12
+    Length of the second word: 12
+       The standard solution:
+           Count = 144
+           Time = 0
+       The custom solution:
+           Count = 42
+           Time = 0
+    CountCustom / CountStandard = 0.2916666666666667
+    TimeCustom / TimeStandard = NaN
+    Substring length = 8
+ */
+
+fun testLongestCommonSubstring(first: String, second: String): String {
+    println("Length of the first word: ${first.length}\nLength of the second word: ${second.length}")
+
+
+    // The standard solution
+    var resultStandard = ""
+    val countStandard = first.length * second.length
+    val timeStandard = measureTimeMillis {
+        if (first == "" || second == "") resultStandard = ""
+        val array = Array(2) { IntArray(second.length) }
+        var length = 0
+        var endIndex = 0
+        for (i in first.indices) {
+            for (j in second.indices) {
+                if (first[i] == second[j]) {
+                    array[1][j] = if (i != 0 && j != 0) array[0][j - 1] + 1 else 1
+                    if (array[1][j] > length) {
+                        length = array[1][j]
+                        endIndex = i
+                    }
+                }
+            }
+            array[0] = array[1]
+            array[1] = IntArray(second.length)
+        }
+        resultStandard = first.substring(endIndex - length + 1, endIndex + 1)
+    }
+
+
+    println(
+        "   The standard solution:\n" +
+                "       Count = $countStandard\n" +
+                "       Time = $timeStandard"
+    )
+
+
+    // The custom solution
+    var resultCustom = ""
+    var countCustom = 0
+    val timeCustom = measureTimeMillis {
+        var result = -1 to -1
+        for (i in first.indices) {
+            if (first.length - i <= result.second) {
+                countCustom++
+                break
+            }
+            for (j in second.indices) {
+                if (second.length - j <= result.second) {
+                    countCustom++
+                    break
+                }
+                if (first[i] == second[j]) {
+                    var length = 1
+                    while (i + length < first.length && j + length < second.length && first[i + length] == second[j + length]) length++
+                    if (length > result.second) result = j to length
+                    countCustom += length
+                } else countCustom++
+            }
+        }
+        resultCustom = if (result.first < 0) "" else second.substring(result.first, result.first + result.second)
+    }
+
+
+    println(
+        "   The custom solution:\n" +
+                "       Count = $countCustom\n" +
+                "       Time = $timeCustom"
+    )
+
+    println("CountCustom / CountStandard = ${countCustom.toDouble() / countStandard}")
+    println("TimeCustom / TimeStandard = ${timeCustom.toDouble() / timeStandard}")
+    println("Substring length = ${resultCustom.length}\n")
+
+    return if (resultCustom == resultStandard) resultCustom else throw Exception()
 }
 
 /**

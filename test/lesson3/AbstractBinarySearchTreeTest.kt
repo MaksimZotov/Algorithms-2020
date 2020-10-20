@@ -229,85 +229,96 @@ abstract class AbstractBinarySearchTreeTest {
         }
     }
 
-    private fun doIteratorRemoveTest(controlSet: MutableSet<Int>, toRemove: Int) {
-        val sortedControlSet = controlSet.sorted().toMutableSet()
+    private fun doIteratorRemoveTest(controlSet: MutableSet<Int>) {
         println("Initial set: $controlSet")
-        println("Sorted initial set: $sortedControlSet")
+        val setToRemove = mutableSetOf<Int>()
+        val random = Random()
+        var count = 0
+        while (count < controlSet.size) {
+            for (item in controlSet) {
+                if (random.nextBoolean()) {
+                    if (!setToRemove.contains(item)) {
+                        count++
+                    }
+                    setToRemove.add(item)
+                }
+            }
+        }
+        println("Elements to remove: $setToRemove")
         val binarySet = create()
         for (element in controlSet) {
             binarySet += element
         }
-        controlSet.remove(toRemove)
-        sortedControlSet.remove(toRemove)
-        println("Control set: $controlSet")
-        println("Sorted control set: $sortedControlSet")
-        println("Removing element $toRemove from the tree through the iterator...")
-        val iterator = binarySet.iterator()
-        assertFailsWith<IllegalStateException>("Something was supposedly removed before the iteration started") {
-            iterator.remove()
-        }
-        var counter = binarySet.size
-        print("Iterating: ")
-        while (iterator.hasNext()) {
-            val element = iterator.next()
-            print("$element, ")
-            counter--
-            if (element == toRemove) {
+        println("     Control set: $controlSet")
+        for (toRemove in setToRemove) {
+            controlSet.remove(toRemove)
+            println("     Removing element: $toRemove")
+            val iterator = binarySet.iterator()
+            assertFailsWith<IllegalStateException>("Something was supposedly removed before the iteration started") {
                 iterator.remove()
-                assertFailsWith<IllegalStateException>("BinarySearchTreeIterator.remove() was successfully called twice in a row.") {
+            }
+            var counter = binarySet.size
+            print("     Iterating: ")
+            while (iterator.hasNext()) {
+                val element = iterator.next()
+                print(if (element == toRemove) "!$element! " else "$element ")
+                counter--
+                if (element == toRemove) {
                     iterator.remove()
+                    assertFailsWith<IllegalStateException>("BinarySearchTreeIterator.remove() was successfully called twice in a row.") {
+                        iterator.remove()
+                    }
                 }
             }
-        }
-        assertEquals(
-            0, counter,
-            "BinarySearchTreeIterator.remove() changed iterator position: ${abs(counter)} elements were ${if (counter > 0) "skipped" else "revisited"}."
-        )
-        assertTrue(
-            binarySet.checkInvariant(),
-            "The binary search tree invariant is false after BinarySearchTreeIterator.remove()."
-        )
-        assertEquals(
-            controlSet.size, binarySet.size,
-            "The size of the tree is incorrect: was ${binarySet.size}, should've been ${controlSet.size}."
-        )
-        for (element in controlSet) {
-            assertTrue(
-                binarySet.contains(element),
-                "The tree doesn't have the element $element from the control set."
+            println()
+            assertEquals(
+                0, counter,
+                "BinarySearchTreeIterator.remove() changed iterator position: ${abs(counter)} elements were ${if (counter > 0) "skipped" else "revisited"}."
             )
-        }
-        for (element in binarySet) {
             assertTrue(
-                controlSet.contains(element),
-                "The tree has the element $element that is not in control set."
+                binarySet.checkInvariant(),
+                "The binary search tree invariant is false after BinarySearchTreeIterator.remove()."
             )
+            assertEquals(
+                controlSet.size, binarySet.size,
+                "The size of the tree is incorrect: was ${binarySet.size}, should've been ${controlSet.size}."
+            )
+            for (element in controlSet) {
+                assertTrue(
+                    binarySet.contains(element),
+                    "The tree doesn't have the element $element from the control set."
+                )
+            }
+            for (element in binarySet) {
+                assertTrue(
+                    controlSet.contains(element),
+                    "The tree has the element $element that is not in control set."
+                )
+            }
+            println("     Control set: $controlSet")
         }
-        println("All clear!")
+        println("All clear!\n")
     }
 
     protected fun doIteratorRemoveTest() {
-        doIteratorRemoveTest(mutableSetOf(91, 54, 31, 24, 63, 80, 66, 45, 25, 95, 43, 14, 73, 12, 42, 33, 5), 54)
-        doIteratorRemoveTest(mutableSetOf(80, 60, 41, 81), 41)
-        doIteratorRemoveTest(mutableSetOf(24, 55, 81, 60, 99, 2, 96, 85, 21, 31, 56, 75, 79, 87, 78, 36, 46, 72), 24)
-        doIteratorRemoveTest(mutableSetOf(5, 4, 6, 3, 7, 2, 8, 1, 9, 0, 10), 8)
-        doIteratorRemoveTest(TreeSet(listOf(0, 2, 3)), 5)
-        doIteratorRemoveTest(TreeSet(listOf()), 0)
+        doIteratorRemoveTest(mutableSetOf(24, 55, 81, 60, 99, 2, 96, 85, 21, 31, 56, 75, 79, 87, 78, 36, 46, 72))
+        doIteratorRemoveTest(mutableSetOf(91, 54, 31, 24, 63, 80, 66, 45, 25, 95, 43, 14, 73, 12, 42, 33, 5))
+        doIteratorRemoveTest(mutableSetOf(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20))
+        doIteratorRemoveTest(mutableSetOf(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20).reversed().toMutableSet())
+        doIteratorRemoveTest(mutableSetOf(80, 60, 41, 81))
+        doIteratorRemoveTest(mutableSetOf(5, 4, 6, 3, 7, 2, 8, 1, 9, 0, 10))
+        doIteratorRemoveTest(mutableSetOf(0, 2, 3))
+        doIteratorRemoveTest(mutableSetOf())
 
         implementationTest { create().iterator().remove() }
         val random = Random()
-        for (iteration in 1..100) {
+        for (iteration in 1..10) {
             val controlSet = mutableSetOf<Int>()
-            val removeIndex = random.nextInt(20) + 1
-            var toRemove = 0
             for (i in 1..20) {
                 val newNumber = random.nextInt(100)
                 controlSet.add(newNumber)
-                if (i == removeIndex) {
-                    toRemove = newNumber
-                }
             }
-            doIteratorRemoveTest(controlSet, toRemove)
+            doIteratorRemoveTest(controlSet)
         }
     }
 
@@ -347,7 +358,36 @@ abstract class AbstractBinarySearchTreeTest {
     }
 
     protected fun doSubSetTest() {
-        doSubSetTest(mutableSetOf(97, 55, 49, 56, 45, 8, 54, 6, 66, 99, 43, 41, 62, 7, 51, 89, 11, 98, 84, 52, 92, 73, 1, 93, 47, 5), 25, 50)
+        doSubSetTest(
+            mutableSetOf(
+                97,
+                55,
+                49,
+                56,
+                45,
+                8,
+                54,
+                6,
+                66,
+                99,
+                43,
+                41,
+                62,
+                7,
+                51,
+                89,
+                11,
+                98,
+                84,
+                52,
+                92,
+                73,
+                1,
+                93,
+                47,
+                5
+            ), 25, 50
+        )
 
         implementationTest { create().subSet(0, 0) }
         assertEquals(
@@ -491,7 +531,11 @@ abstract class AbstractBinarySearchTreeTest {
     }
 
     protected fun doSubSetFirstAndLastTest() {
-        doSubSetFirstAndLastTest(sortedSetOf(0, 3, 10, 14, 17, 18, 21, 24, 26, 27, 30, 35, 65, 76, 85, 90, 92, 94, 99), 65, 66)
+        doSubSetFirstAndLastTest(
+            sortedSetOf(0, 3, 10, 14, 17, 18, 21, 24, 26, 27, 30, 35, 65, 76, 85, 90, 92, 94, 99),
+            65,
+            66
+        )
 
         implementationTest { create().subSet(0, 0).first() }
         implementationTest { create().subSet(0, 0).last() }

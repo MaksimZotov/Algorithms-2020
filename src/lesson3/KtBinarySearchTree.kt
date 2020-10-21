@@ -158,21 +158,20 @@ class KtBinarySearchTree<T : Comparable<T>> : AbstractMutableSet<T>(), Checkable
 
     // Частично взял решение отсюда: https://medium.com/algorithm-problems/binary-search-tree-iterator-19615ec585a
     inner class BinarySearchTreeIterator internal constructor() : MutableIterator<T> {
-        private val initialSize = size
-        private var countIter = 0
         private var stack = Stack<Pair<Node<T>, Node<T>?>>()
         private var currentNode: Node<T>? = null
         private var parentOfCurrentNode: Node<T>? = null
 
+        // Время - O(N)
+        // Память - O(2 * N)
         init {
-            pushToLeft(root, null)
+            root?.let { pushToLeft(it, null) }
         }
 
-        private fun pushToLeft(node: Node<T>?, parent: Node<T>?) {
-            if (node != null) {
-                stack.push(node to parent)
-                pushToLeft(node.left, node)
-            }
+        private fun pushToLeft(node: Node<T>, parent: Node<T>?) {
+            node.right?.let { pushToLeft(it, node) }
+            stack.push(node to parent)
+            node.left?.let { pushToLeft(it, node) }
         }
 
         /**
@@ -188,7 +187,7 @@ class KtBinarySearchTree<T : Comparable<T>> : AbstractMutableSet<T>(), Checkable
 
         // Время - O(1)
         override fun hasNext(): Boolean =
-            countIter < initialSize
+            stack.isNotEmpty()
 
         /**
          * Получение следующего элемента
@@ -204,19 +203,16 @@ class KtBinarySearchTree<T : Comparable<T>> : AbstractMutableSet<T>(), Checkable
          * Средняя
          */
 
-        // Время - O(Log(N))
-        // Память - O(Log(N))
+        // Время - O(1)
         override fun next(): T {
-            countIter++
             if (stack.isEmpty())
                 throw IllegalStateException()
 
-            val nodeAndParent = stack.pop()
+            val childAndParent = stack.pop()
 
-            currentNode = nodeAndParent.first
-            parentOfCurrentNode = nodeAndParent.second
+            currentNode = childAndParent.first
+            parentOfCurrentNode = childAndParent.second
 
-            pushToLeft(currentNode!!.right, currentNode)
             return currentNode!!.value
         }
 

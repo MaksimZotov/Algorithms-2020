@@ -163,15 +163,15 @@ class KtBinarySearchTree<T : Comparable<T>> : AbstractMutableSet<T>(), Checkable
         private var parentOfCurrentNode: Node<T>? = null
 
         // Время - O(N)
-        // Память - O(2 * N)
+        // Память - O(2 * N) = O(N)
         init {
-            root?.let { pushToLeft(it, null) }
+            root?.let { addToStack(it, null) }
         }
 
-        private fun pushToLeft(node: Node<T>, parent: Node<T>?) {
-            node.right?.let { pushToLeft(it, node) }
+        private fun addToStack(node: Node<T>, parent: Node<T>?) {
+            node.right?.let { addToStack(it, node) }
             stack.push(node to parent)
-            node.left?.let { pushToLeft(it, node) }
+            node.left?.let { addToStack(it, node) }
         }
 
         /**
@@ -237,7 +237,7 @@ class KtBinarySearchTree<T : Comparable<T>> : AbstractMutableSet<T>(), Checkable
                 remove(currentNode.value)
             } else {
                 val parent = parentOfCurrentNode ?: return
-                // // O(L) - при наличии обоих потомков, O(1) - в других случаях
+                // O(L) - при наличии обоих потомков, O(1) - в других случаях
                 remove(parent, currentNode, currentNode == parent.right)
             }
             this.currentNode = null

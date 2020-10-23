@@ -11,6 +11,12 @@ class KtOpenAddressingSetTest : AbstractOpenAddressingSetTest() {
 
     @Test
     @Tag("Example")
+    fun containsTest() {
+        doContainsTest()
+    }
+
+    @Test
+    @Tag("Example")
     fun addTest() {
         doAddTest()
     }

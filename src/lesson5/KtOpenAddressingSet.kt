@@ -1,9 +1,14 @@
 package lesson5
 
+import java.lang.Exception
+import java.lang.IllegalStateException
+
 /**
  * Множество(таблица) с открытой адресацией на 2^bits элементов без возможности роста.
  */
 class KtOpenAddressingSet<T : Any>(private val bits: Int) : AbstractMutableSet<T>() {
+    class Removed()
+
     init {
         require(bits in 2..31)
     }
@@ -27,12 +32,12 @@ class KtOpenAddressingSet<T : Any>(private val bits: Int) : AbstractMutableSet<T
     override fun contains(element: T): Boolean {
         var index = element.startingIndex()
         var current = storage[index]
-        while (current != null) {
-            if (current == element) {
-                return true
-            }
+        var count = 0 // счётчик нужен на случай вызова contains() для элемента, отсутствующего в полностью заполненной таблице
+        while (current != null && count < capacity) {
+            if (current == element) return true
             index = (index + 1) % capacity
             current = storage[index]
+            count++
         }
         return false
     }
@@ -49,14 +54,12 @@ class KtOpenAddressingSet<T : Any>(private val bits: Int) : AbstractMutableSet<T
      */
     override fun add(element: T): Boolean {
         val startingIndex = element.startingIndex()
-        var index = startingIndex
+        var index = element.startingIndex()
         var current = storage[index]
-        while (current != null) {
-            if (current == element) {
-                return false
-            }
+        while (current != null && current !is Removed) {
+            if (current == element) return false
             index = (index + 1) % capacity
-            check(index != startingIndex) { "Table is full" }
+            if (index == startingIndex) throw IllegalStateException("Table is full")
             current = storage[index]
         }
         storage[index] = element
@@ -75,9 +78,28 @@ class KtOpenAddressingSet<T : Any>(private val bits: Int) : AbstractMutableSet<T
      *
      * Средняя
      */
+
+    // Время - O(<= N)
+    // Память - O(1)
     override fun remove(element: T): Boolean {
-        TODO("not implemented")
+        val startingIndex = element.startingIndex()
+        var index = element.startingIndex()
+        var current = storage[index]
+        while (current != null) {
+            if (current == element) {
+                storage[index] = Removed()
+                size--
+                return true
+            } else if (current is Removed) {
+                return false
+            }
+            index = (index + 1) % capacity
+            if (index == startingIndex) return false
+            current = storage[index]
+        }
+        throw Exception("We can not be here")
     }
+
 
     /**
      * Создание итератора для обхода таблицы
@@ -89,7 +111,35 @@ class KtOpenAddressingSet<T : Any>(private val bits: Int) : AbstractMutableSet<T
      *
      * Средняя (сложная, если поддержан и remove тоже)
      */
-    override fun iterator(): MutableIterator<T> {
-        TODO("not implemented")
+    override fun iterator(): MutableIterator<T> =
+        Iterator()
+
+    // Во всех функциях расходы по памяти равны O(1)
+    // По времени суммарная сложность всех функций при проходе от первого до последнего элемента равна O(N)
+    inner class Iterator : MutableIterator<T> {
+        val maxIndex = storage.indexOfLast { it != null && it !is Removed }
+        var currentWasRemoved = true
+        var index = -1
+
+        override fun hasNext(): Boolean =
+            index != maxIndex
+
+        override fun next(): T {
+            currentWasRemoved = false
+            for (i in index + 1..storage.lastIndex) {
+                if (storage[i] != null && storage[i] !is Removed) {
+                    index = i
+                    return storage[index] as T
+                }
+            }
+            throw IllegalStateException()
+        }
+
+        override fun remove() {
+            if (currentWasRemoved) throw IllegalStateException()
+            storage[index] = Removed()
+            currentWasRemoved = true
+            size--
+        }
     }
 }

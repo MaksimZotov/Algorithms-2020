@@ -12,6 +12,15 @@ abstract class AbstractOpenAddressingSetTest {
 
     abstract fun <T : Any> create(bits: Int): MutableSet<T>
 
+    protected fun doContainsTest() {
+        val openAddressingSet = create<Int>(2)
+        openAddressingSet.add(0)
+        openAddressingSet.add(1)
+        openAddressingSet.add(2)
+        openAddressingSet.add(3)
+        assertFalse { 4 in openAddressingSet }
+    }
+
     protected fun doAddTest() {
         val random = Random()
         for (iteration in 1..100) {

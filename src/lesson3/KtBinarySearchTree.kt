@@ -53,10 +53,9 @@ class KtBinarySearchTree<T : Comparable<T>> : AbstractMutableSet<T>(), Checkable
 
     // Время - O(Log(N)) при равномерном распределении или O(N) при распределении в виде списка +
     //         + O(f(x1)) + O(f(x2)) + ... + O(f(xm)), где
-    //         f(xi) - временная сложность функции update() у i-го subSet'а
-    // Память - O(f(x1)) + O(f(x2)) + ... + O(f(xm)), где
-    //         f(xi) - затраты по памяти у функции update() у i-го subSet'а
-    // m - количество "выпушенных" бинарным деревом подмножеств
+    //         f(xi) - временная сложность функции addOutside() у i-го subSet'а
+    //         m - количество "выпушенных" бинарным деревом подмножеств
+    // Память - O(1)
     override fun add(element: T): Boolean {
         val closest = find(element)
         val comparison = if (closest == null) -1 else element.compareTo(closest.value)
@@ -78,7 +77,7 @@ class KtBinarySearchTree<T : Comparable<T>> : AbstractMutableSet<T>(), Checkable
         size++
 
         // O(f(x1)) + O(f(x2)) + ... + O(f(xm))
-        subSets.forEach { it.update() }
+        subSets.forEach { it.addOutside(element) }
         return true
     }
 
@@ -95,7 +94,11 @@ class KtBinarySearchTree<T : Comparable<T>> : AbstractMutableSet<T>(), Checkable
      * Средняя
      */
 
-    // Время - O(Log(N)) при равномерном распределении или O(N) при распределении в виде списка
+    // Время - O(Log(N)) при равномерном распределении или O(N) при распределении в виде списка +
+    //         + O(f(x1)) + O(f(x2)) + ... + O(f(xm)), где
+    //         f(xi) - временная сложность функции removeOutside() у i-го subSet'а
+    //         m - количество "выпушенных" бинарным деревом подмножеств
+    // Память - O(1)
     override fun remove(element: T): Boolean {
         val root = root ?: return false
         val comparison = element.compareTo(root.value)
@@ -105,6 +108,9 @@ class KtBinarySearchTree<T : Comparable<T>> : AbstractMutableSet<T>(), Checkable
             this.root = auxiliary.right
             return true
         }
+
+        // O(f(x1)) + O(f(x2)) + ... + O(f(xm))
+        subSets.forEach { it.removeOutside(element) }
         return findAndRemove(root, element, comparison > 0)
     }
 
@@ -205,14 +211,10 @@ class KtBinarySearchTree<T : Comparable<T>> : AbstractMutableSet<T>(), Checkable
 
         // Время - O(1)
         override fun next(): T {
-            if (stack.isEmpty())
-                throw IllegalStateException()
-
+            if (stack.isEmpty()) throw IllegalStateException()
             val childAndParent = stack.pop()
-
             currentNode = childAndParent.first
             parentOfCurrentNode = childAndParent.second
-
             return currentNode!!.value
         }
 
@@ -264,83 +266,80 @@ class KtBinarySearchTree<T : Comparable<T>> : AbstractMutableSet<T>(), Checkable
         SubSetKtBinarySearchTree(fromElement, toElement)
 
     private inner class SubSetKtBinarySearchTree(val fromElement: T?, val toElement: T?) : SortedSet<T> {
-        val queue: ArrayDeque<T> = ArrayDeque()
-        var auxiliaryFirst: T? = null
-        var auxiliaryLast: T? = null
+        private val queue: ArrayDeque<T> = ArrayDeque()
+        private var auxiliaryFirst: T? = null
+        private var auxiliaryLast: T? = null
+
+        private fun elementMoreThenOrEqualToFrom(element: T): Boolean = if (fromElement == null) true else element >= fromElement
+        private fun elementLessThenTo(element: T): Boolean = if (toElement == null) true else element < toElement
+        private fun inRange(element: T): Boolean = elementMoreThenOrEqualToFrom(element) && elementLessThenTo(element)
 
         init {
-            update()
-            subSets.add(this)
-        }
-
-        // Время - O(N)   N - количество элементов в дереве
-        // Память - O(K)   K - количество элементов в дереве, лежащих в диапазоне [fromElement, toElement)
-        fun update() {
-            queue.clear()
             val iterator = this@KtBinarySearchTree.iterator()
             while (iterator.hasNext()) {
                 val element = iterator.next()
-                val moreOrEqual = fromElement?.let { it <= element } ?: true
-                val less = toElement?.let { it > element } ?: true
-                if (!less) break
-                if (moreOrEqual) queue.addFirst(element)
+                if (!elementLessThenTo(element)) break
+                if (elementMoreThenOrEqualToFrom(element)) queue.addFirst(element)
             }
+            subSets.add(this)
         }
 
-        // Время - O(f(add) + N)
-        // Память - O(f(add))
-        // f(add) - сложность функции add() класса KtBinarySearchTree
-        // N - количество элементов в данном подмножестве
-        override fun add(element: T): Boolean {
-            if (fromElement?.let { it > element } == true || toElement?.let { it <= element } == true) {
-                throw IllegalArgumentException()
-            }
+        override val size: Int get() = queue.size
+        override fun isEmpty(): Boolean = size == 0
+        override fun clear() = queue.clear()
 
-            // O(f(add))
-            if (!this@KtBinarySearchTree.add(element)) {
-                return false
-            }
+        override fun add(element: T): Boolean = if (inRange(element)) this@KtBinarySearchTree.add(element) else throw IllegalArgumentException()
+        override fun remove(element: T): Boolean = if (inRange(element)) this@KtBinarySearchTree.remove(element) else throw IllegalArgumentException()
+        override fun contains(element: T): Boolean = queue.contains(element)
 
-            // Время - O(N)
-            // Память - увеличивается на 1 число элементов, лежащих в диапазоне [fromElement, toElement)
-            update()
-            return true
+        fun forAll(elements: Collection<T>, func: (T) -> Boolean): Boolean {
+            var res = true
+            elements.forEach { if (!func(it)) res = false }
+            return res
         }
 
-        override fun addAll(elements: Collection<T>): Boolean {
-            TODO("Not yet implemented")
-        }
-
-        override fun clear() {
-            TODO("Not yet implemented")
-        }
-
-        override fun iterator(): MutableIterator<T> {
-            TODO("Not yet implemented")
-        }
-
-        override fun removeAll(elements: Collection<T>): Boolean {
-            TODO("Not yet implemented")
-        }
-
-        override fun contains(element: T): Boolean {
-            return queue.contains(element)
-        }
-
-        override fun tailSet(fromElement: T): SortedSet<T> {
-            TODO("Not yet implemented")
-        }
+        override fun addAll(elements: Collection<T>): Boolean = forAll(elements, this::add)
+        override fun removeAll(elements: Collection<T>): Boolean = forAll(elements, this::remove)
+        override fun containsAll(elements: Collection<T>): Boolean = forAll(elements, this::contains)
 
         // Время - O(1)
-        override fun first(): T {
+        // Память - O(1)
+        fun firstOrLast(func: () -> T): T {
             if (queue.isEmpty()) {
                 if (auxiliaryFirst == null) throw NoSuchElementException()
                 val res = auxiliaryFirst
                 auxiliaryFirst = null
                 return res!!
             }
-            auxiliaryLast = queue.removeLast()
+            auxiliaryLast = func()
             return auxiliaryLast!!
+        }
+
+        override fun first(): T = firstOrLast { queue.last() }
+        override fun last(): T = firstOrLast { queue.first() }
+
+        // Время - O(<= N)   N - количество элементов данном подмножестве
+        // Память - O(1)
+        fun addOutside(element: T) {
+            if (!inRange(element)) return
+            val index = queue.indexOf(queue.firstOrNull { it > element })
+            queue.add(if (index == -1) 0 else index, element)
+        }
+
+        // Время - O(<= N)   N - количество элементов данном подмножестве
+        // Память - O(1)
+        fun removeOutside(element: T) {
+            if (!inRange(element)) return
+            queue.remove(element)
+        }
+
+
+        override fun iterator(): MutableIterator<T> {
+            TODO("Not yet implemented")
+        }
+
+        override fun tailSet(fromElement: T): SortedSet<T> {
+            TODO("Not yet implemented")
         }
 
         override fun headSet(toElement: T): SortedSet<T> {
@@ -351,54 +350,12 @@ class KtBinarySearchTree<T : Comparable<T>> : AbstractMutableSet<T>(), Checkable
             TODO("Not yet implemented")
         }
 
-        // Время - O(Log(N) + O(1) + O(M)) в лучшем случае
-        //         O(2N + M) в худшем случае
-        // N - количество элементов в дереве
-        // M - количество элементов в данном подмножестве
-        override fun remove(element: T): Boolean {
-            if (fromElement?.let { it > element } == true || toElement?.let { it <= element } == true) {
-                throw IllegalArgumentException()
-            }
-
-            // Время - O(Log(N) + O(1)) при равномерном распределении и удалении элемента, который на очереди к выходу
-            //         O(N + N) при распределении в виде списка и удалении элемента, который последним встал в очередь
-            if (!this@KtBinarySearchTree.remove(element) || !queue.remove(element)) return false
-
-            // Время - O(M)
-            // Память - уменьшается на 1 число элементов, лежащих в диапазоне [fromElement, toElement)
-            update()
-            return true
-        }
-
         override fun retainAll(elements: Collection<T>): Boolean {
             TODO("Not yet implemented")
         }
 
-        override val size: Int
-            get() = queue.size
-
-        override fun containsAll(elements: Collection<T>): Boolean {
-            TODO("Not yet implemented")
-        }
-
-        override fun isEmpty(): Boolean {
-            return size == 0
-        }
-
         override fun comparator(): Comparator<in T>? {
             TODO("Not yet implemented")
-        }
-
-        // Время - O(1)
-        override fun last(): T {
-            if (queue.isEmpty()) {
-                if (auxiliaryLast == null) throw NoSuchElementException()
-                val res = auxiliaryLast
-                auxiliaryLast = null
-                return res!!
-            }
-            auxiliaryFirst = queue.removeFirst()
-            return auxiliaryFirst!!
         }
     }
 

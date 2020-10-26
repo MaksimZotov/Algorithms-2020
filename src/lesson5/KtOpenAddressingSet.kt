@@ -126,7 +126,7 @@ class KtOpenAddressingSet<T : Any>(private val bits: Int) : AbstractMutableSet<T
 
         override fun next(): T {
             currentWasRemoved = false
-            for (i in index + 1..storage.lastIndex) {
+            for (i in index + 1..maxIndex) {
                 if (storage[i] != null && storage[i] !is Removed) {
                     index = i
                     return storage[index] as T

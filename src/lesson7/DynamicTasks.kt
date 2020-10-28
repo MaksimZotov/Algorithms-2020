@@ -2,6 +2,7 @@
 
 package lesson7
 
+
 /**
  * Наибольшая общая подпоследовательность.
  * Средняя
@@ -14,8 +15,28 @@ package lesson7
  * Если есть несколько самых длинных общих подпоследовательностей, вернуть любую из них.
  * При сравнении подстрок, регистр символов *имеет* значение.
  */
+// Время - O(N * M)
+// Память - O(N * M)
+//
+// Решения взято отсюда: https://introcs.cs.princeton.edu/java/23recursion/LongestCommonSubsequence.java.html
 fun longestCommonSubSequence(first: String, second: String): String {
-    TODO()
+    val array = Array(first.length + 1) { IntArray(second.length + 1) }
+    for (i in first.length - 1 downTo 0)
+        for (j in second.length - 1 downTo 0) {
+            if (first[i] == second[j]) array[i][j] = array[i + 1][j + 1] + 1
+            else array[i][j] = Math.max(array[i + 1][j], array[i][j + 1])
+        }
+    val result = StringBuilder()
+    var i = 0
+    var j = 0
+    while (i < first.length && j < second.length) {
+        if (first[i] == second[j]) {
+            result.append(first[i])
+            i++
+            j++
+        } else if (array[i + 1][j] >= array[i][j + 1]) i++ else j++
+    }
+    return result.toString()
 }
 
 /**
@@ -30,8 +51,46 @@ fun longestCommonSubSequence(first: String, second: String): String {
  * то вернуть ту, в которой числа расположены раньше (приоритет имеют первые числа).
  * В примере ответами являются 2, 8, 9, 12 или 2, 5, 9, 12 -- выбираем первую из них.
  */
+
+// Время - O(<= N^2)
+// Память - O(N)
+//
+// Решения взято отсюда: https://stackoverflow.com/questions/54885750/first-longest-increasing-subsequence
 fun longestIncreasingSubSequence(list: List<Int>): List<Int> {
-    TODO()
+    val data = Array(list.size) { IntArray(2) }
+    var maxLength = 0
+
+    // O(N)
+    for (i in list.indices) {
+        data[i][0] = -1
+        data[i][1] = 1
+        // O(i)   i меняется так: 1 -> 2 -> 4 -> 5 -> 6 -> ...
+        for (j in i - 1 downTo 0) {
+            if (list[i] > list[j]) {
+                if (data[i][1] <= data[j][1] + 1) {
+                    data[i][1] = data[j][1] + 1
+                    data[i][0] = j
+                }
+            }
+        }
+        maxLength = Math.max(maxLength, data[i][1])
+    }
+    val result = mutableListOf<Int>()
+
+    // O(N)
+    for (i in list.indices) {
+        if (data[i][1] == maxLength) {
+            var cur = i
+            // O(?)
+            while (cur != -1) {
+                result.add(list[cur])
+                cur = data[cur][0]
+            }
+            break
+        }
+    }
+    result.reverse()
+    return result
 }
 
 /**

@@ -77,31 +77,21 @@ class KtTrie : AbstractMutableSet<String>(), MutableSet<String> {
         private val stack = Stack<String>()
         private var currentWord: String? = null
 
-        // Время - O(N + M * L) в худшем случае
-        // Память - O(M * L) в худшем случае
-        // N - суммарное количество букв во всех словах, M - количество слов, L - максимальная длина слова
+        // Время - O(N)
+        // Память - O(M)
+        // N - количество букв в дереве, M - количество слов
         init {
-            if (root.children.isNotEmpty()) {
-                findAllBranches(String(), root)
-            }
+            root.children.forEach { findAllBranches(it.key.toString(), it.value) }
         }
 
-        // Время - O(N + M * L) в худшем случае
-        // Память - O(M * L) в худшем случае
-        // N - суммарное количество букв во всех словах, M - количество слов, L - максимальная длина слова
+        // Время - O(N)
+        // Память - O(M)
+        // N - количество букв в дереве, M - количество слов
         //
         // В ходе рекурсивного обхода создаётся много мусора (word + it.key), но
         // он мало времени находится в зоне видимости, поэтому его не учитывал
         private fun findAllBranches(word: String, currentNode: Node) {
-            if (currentNode.children.isEmpty()) {
-                val toPush = if (word.last().toInt() == 0) word.substring(0, word.lastIndex) else word
-
-                // O(L)
-                if (toPush !in this@KtTrie) return
-
-                stack.push(toPush)
-            }
-            currentNode.children.forEach { findAllBranches(word + it.key, it.value) }
+            currentNode.children.forEach { if (it.key == 0.toChar()) stack.push(word) else findAllBranches(word + it.key, it.value) }
         }
 
         // Время - O(1)

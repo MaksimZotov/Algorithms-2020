@@ -90,7 +90,7 @@ class KtOpenAddressingSet<T : Any>(private val bits: Int) : AbstractMutableSet<T
                 storage[index] = removed
                 size--
                 return true
-            } else if (current != removed) {
+            } else if (current == removed) {
                 return false
             }
             index = (index + 1) % capacity

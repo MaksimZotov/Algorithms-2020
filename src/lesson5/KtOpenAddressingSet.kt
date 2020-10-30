@@ -7,7 +7,7 @@ import java.lang.IllegalStateException
  * Множество(таблица) с открытой адресацией на 2^bits элементов без возможности роста.
  */
 class KtOpenAddressingSet<T : Any>(private val bits: Int) : AbstractMutableSet<T>() {
-    class Removed()
+    private val removed = object {}
 
     init {
         require(bits in 2..31)
@@ -56,7 +56,7 @@ class KtOpenAddressingSet<T : Any>(private val bits: Int) : AbstractMutableSet<T
         val startingIndex = element.startingIndex()
         var index = element.startingIndex()
         var current = storage[index]
-        while (current != null && current !is Removed) {
+        while (current != null && current != removed) {
             if (current == element) return false
             index = (index + 1) % capacity
             if (index == startingIndex) throw IllegalStateException("Table is full")
@@ -87,10 +87,10 @@ class KtOpenAddressingSet<T : Any>(private val bits: Int) : AbstractMutableSet<T
         var current = storage[index]
         while (current != null) {
             if (current == element) {
-                storage[index] = Removed()
+                storage[index] = removed
                 size--
                 return true
-            } else if (current is Removed) {
+            } else if (current != removed) {
                 return false
             }
             index = (index + 1) % capacity
@@ -117,7 +117,7 @@ class KtOpenAddressingSet<T : Any>(private val bits: Int) : AbstractMutableSet<T
     // Во всех функциях расходы по памяти равны O(1)
     // По времени суммарная сложность всех функций при проходе от первого до последнего элемента равна O(N)
     inner class Iterator : MutableIterator<T> {
-        val maxIndex = storage.indexOfLast { it != null && it !is Removed }
+        val maxIndex = storage.indexOfLast { it != null && it != removed }
         var currentWasRemoved = true
         var index = -1
 
@@ -127,7 +127,7 @@ class KtOpenAddressingSet<T : Any>(private val bits: Int) : AbstractMutableSet<T
         override fun next(): T {
             currentWasRemoved = false
             for (i in index + 1..maxIndex) {
-                if (storage[i] != null && storage[i] !is Removed) {
+                if (storage[i] != null && storage[i] != removed) {
                     index = i
                     return storage[index] as T
                 }
@@ -137,7 +137,7 @@ class KtOpenAddressingSet<T : Any>(private val bits: Int) : AbstractMutableSet<T
 
         override fun remove() {
             if (currentWasRemoved) throw IllegalStateException()
-            storage[index] = Removed()
+            storage[index] = removed
             currentWasRemoved = true
             size--
         }

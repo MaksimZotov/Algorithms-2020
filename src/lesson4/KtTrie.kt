@@ -1,5 +1,8 @@
 package lesson4
 
+import lesson2.calcPrimesNumber
+import java.lang.Exception
+import java.lang.StringBuilder
 import java.util.*
 
 /**
@@ -74,43 +77,87 @@ class KtTrie : AbstractMutableSet<String>(), MutableSet<String> {
         IteratorKtTrie()
 
     inner class IteratorKtTrie : MutableIterator<String> {
-        private val stack = Stack<String>()
-        private var currentWord: String? = null
+        private var count = size
+        private var word = StringBuilder()
+        private var currentWord = mutableListOf<Char>()
+        private var currentNode = root
 
-        // Время - O(N)
-        // Память - O(M)
-        // N - количество букв в дереве, M - количество слов
-        init {
-            root.children.forEach { findAllBranches(it.key.toString(), it.value) }
+        private fun getNext(lastChar: Char?): String {
+            var lastChar = lastChar
+            var lastCharIsFound = false
+            while (true) {
+                var firstNotNull: Node? = null
+                var nextChar: Char? = null
+                for (char in currentNode.children.keys) {
+                    if (lastChar != null) {
+                        if (!lastCharIsFound && char != lastChar) {
+                            continue
+                        }
+                        if (!lastCharIsFound && char == lastChar) {
+                            lastCharIsFound = true
+                            continue
+                        }
+                    }
+                    if (char == 0.toChar()) {
+                        word.clear()
+                        for (char in currentWord) {
+                            word.append(char)
+                        }
+                        currentWord.add(0.toChar())
+                        return word.toString()
+                    }
+                    if (firstNotNull == null && currentNode.children[char] != null) {
+                        nextChar = char
+                        firstNotNull = currentNode.children[char]!!
+                        currentNode = firstNotNull
+                        currentWord.add(nextChar)
+                        break
+                    }
+                }
+                if (nextChar == null) {
+                    lastChar = currentWord.removeAt(currentWord.lastIndex)
+                    lastCharIsFound = false
+                    val wordForParentNode = StringBuilder()
+                    for (char in currentWord) {
+                        wordForParentNode.append(char)
+                    }
+                    currentNode = findNode(wordForParentNode.toString())!!
+                }
+            }
         }
 
-        // Время - O(N)
-        // Память - O(M)
-        // N - количество букв в дереве, M - количество слов
-        //
-        // В ходе рекурсивного обхода создаётся много мусора (word + it.key), но
-        // он мало времени находится в зоне видимости, поэтому его не учитывал
-        private fun findAllBranches(word: String, currentNode: Node) {
-            currentNode.children.forEach { if (it.key == 0.toChar()) stack.push(word) else findAllBranches(word + it.key, it.value) }
-        }
-
-        // Время - O(1)
         override fun hasNext(): Boolean =
-            stack.isNotEmpty()
+            count != 0
 
-        // Время - O(1)
-        // Память - уменьшается на единицу количество хранящихся в стеке элементов
+        var nextWasInvoked = false
         override fun next(): String {
-            if (stack.isEmpty()) throw IllegalStateException()
-            currentWord = stack.pop()
-            return currentWord!!
+            var res = ""
+            if (count == 0) {
+                throw IllegalStateException()
+            }
+            if (!prevWordIsRemoved) {
+                if (!nextWasInvoked) {
+                    if (root.children.isNotEmpty()) {
+                        res = getNext(null)
+                    }
+                    nextWasInvoked = true
+                } else {
+                    res = getNext(currentWord.removeAt(currentWord.lastIndex))
+                }
+            }
+            prevWordIsRemoved = false
+            count--
+            return res
         }
 
-        // Время - O(N)   N - длина currentWord
-        // Память - добавление данных в память не происходит
+        private var prevWordIsRemoved = false
         override fun remove() {
-            if (currentWord == null || !this@KtTrie.remove(currentWord)) throw IllegalStateException()
-            currentWord = null
+            if (currentWord.isEmpty() || prevWordIsRemoved) throw IllegalStateException()
+            val prevNode = currentNode
+            if (hasNext()) getNext(currentWord.removeAt(currentWord.lastIndex))
+            if (prevNode.children.remove(0.toChar()) == null) throw IllegalStateException()
+            prevWordIsRemoved = true
+            size--
         }
     }
 }

@@ -7,19 +7,31 @@ import lesson6.Graph.Vertex
 class GraphBuilder {
 
     data class VertexImpl(private val nameField: String) : Vertex {
+        private var mark: Boolean = false
+
         override fun getName() = nameField
 
         override fun toString() = name
+
+        override fun isMarked(): Boolean = mark
+
+        override fun isMarked(mark: Boolean) { this.mark = mark }
     }
 
     data class EdgeImpl(
         private val weightField: Int,
         private val _begin: Vertex,
-        private val _end: Vertex
+        private val _end: Vertex,
     ) : Edge {
+        private var mark: Boolean = false
+
         override fun getBegin() = _begin
 
         override fun getEnd() = _end
+
+        override fun isMarked(): Boolean = mark
+
+        override fun isMarked(mark: Boolean) { this.mark = mark }
 
         override fun getWeight() = weightField
     }

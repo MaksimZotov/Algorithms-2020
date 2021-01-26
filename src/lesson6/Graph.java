@@ -11,6 +11,12 @@ public interface Graph {
     interface Vertex {
         @NotNull
         String getName();
+
+        @NotNull
+        public Boolean isMarked();
+
+        @NotNull
+        public void isMarked(boolean mark);
     }
 
     interface Edge {
@@ -19,6 +25,12 @@ public interface Graph {
 
         @NotNull
         Vertex getEnd();
+
+        @NotNull
+        public Boolean isMarked();
+
+        @NotNull
+        public void isMarked(boolean mark);
 
         default int getWeight() {
             return 1;

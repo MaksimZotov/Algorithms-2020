@@ -28,8 +28,48 @@ package lesson6
  * Справка: Эйлеров цикл -- это цикл, проходящий через все рёбра
  * связного графа ровно по одному разу
  */
+
+// Время - O(V * E)
+// Память - O(1)
 fun Graph.findEulerLoop(): List<Graph.Edge> {
-    TODO()
+    val path = mutableListOf<Graph.Edge>()
+    val startVertex = vertices.firstOrNull() ?: return mutableListOf()
+    var stopChecking = false
+
+    // Проверка связности графа и чётности степеней вершин
+    // O(V * E)
+    var count = 0
+    fun dfs(v: Graph.Vertex) {
+        if (stopChecking) return
+        v.isMarked(true)
+        count++
+        if (getConnections(v).values.size % 2 != 0) {
+            stopChecking = true
+            return
+        }
+        // O(E)
+        for (neighbour in getConnections(v).keys)
+            if (!neighbour.isMarked)
+                dfs(neighbour)
+    }
+    dfs(startVertex)
+    if (count != vertices.size) return mutableListOf()
+
+    // Поиск Эйлерова цикла
+    // O(V * E)
+    fun findEdges(v: Graph.Vertex) {
+        while (true) {
+            // O( <= E)
+            val ve = getConnections(v).entries.find { !it.value.isMarked } ?: return
+            val vertex = ve.key
+            val edge = ve.value
+            edge.isMarked(true)
+            findEdges(vertex)
+            path.add(edge)
+        }
+    }
+    findEdges(startVertex)
+    return path
 }
 
 /**
